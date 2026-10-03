@@ -27,15 +27,15 @@ Open `out/index.html` in Chromium (double-click, or `python -m http.server --dir
 
 `example/` contains seven input/output pairs, each produced by one run of `agent.py` with no manual editing (for example `python agent.py --input example/attention/case.json --output example/attention/out --model deepseek/deepseek-v4.1-flash`). They are for showcasing; assessed outputs are generated afresh.
 
-| Example | Paper and focus | API calls | Prompt tokens | Completion tokens | Total tokens | Time |
-|---|---|---|---|---|---|---|
-| `attention` | Attention Is All You Need, §3.2.1: scaled dot-product attention | 2 | 11,008 | 5,528 | 16,536 | 39 s |
-| `entropy` | Shannon, A Mathematical Theory of Communication, §6: discrete entropy | 2 | 11,981 | 4,424 | 16,405 | 19 s |
-| `adam` | Adam, Algorithm 1: bias-corrected moment estimates | 4 | 26,840 | 10,605 | 37,445 | 35 s |
-| `batchnorm` | Batch Normalization, Algorithm 1 | 1 | 4,243 | 3,844 | 8,087 | 16 s |
-| `diffusion` | DDPM, §2 Eq. 4: closed-form forward process | 1 | 2,840 | 2,910 | 5,750 | 17 s |
-| `rope` | RoFormer, §3.2: rotary position embedding (2-D) | 4 | 30,627 | 8,755 | 39,382 | 85 s |
-| `temperature` | Distilling the Knowledge in a Neural Network, §2: softmax temperature | 1 | 3,843 | 2,741 | 6,584 | 36 s |
+| Example | Paper and focus | API calls | Completion tokens | Time |
+|---|---|---|---|---|
+| `attention` | Attention Is All You Need, §3.2.1: scaled dot-product attention | 2 | 5,528 | 39 s |
+| `entropy` | Shannon, A Mathematical Theory of Communication, §6: discrete entropy | 2 | 4,424 | 19 s |
+| `adam` | Adam, Algorithm 1: bias-corrected moment estimates | 4 | 10,605 | 35 s |
+| `batchnorm` | Batch Normalization, Algorithm 1 | 1 | 3,844 | 16 s |
+| `diffusion` | DDPM, §2 Eq. 4: closed-form forward process | 1 | 2,910 | 17 s |
+| `rope` | RoFormer, §3.2: rotary position embedding (2-D) | 4 | 8,755 | 85 s |
+| `temperature` | Distilling the Knowledge in a Neural Network, §2: softmax temperature | 1 | 2,741 | 36 s |
 
 The assessment limit of 30,000 applies to **completion** tokens per case; the largest example used 10,605 (the agent also stops itself at 28,500). Total tokens (prompt + completion) are what the efficiency score counts.
 
