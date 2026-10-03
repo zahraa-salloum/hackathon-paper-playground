@@ -1,0 +1,38 @@
+<spec>
+{"title":"Scaled dot-product attention, step by step",
+"paper":{"title":"Attention Is All You Need","authors":"Vaswani et al.","year":"2017","section":"Section 3.2.1, Eq. (1)"},
+"equations":["Attention(Q, K, V) = softmax(Q Kᵀ / √d_k) V"],
+"idea":"Each query asks 'which positions matter to me?'. It is compared with every key by a dot product; the scores are turned into weights that sum to 1 with softmax, and the output is the weighted average of the value vectors.",
+"why":"This is the basic operation inside Transformer layers: it lets every position gather information from every other position.",
+"symbols":[{"sym":"Q","meaning":"queries: one row per position asking a question"},{"sym":"K","meaning":"keys: one row per position, matched against queries"},{"sym":"V","meaning":"values: the information that is averaged"},{"sym":"d_k","meaning":"number of columns of Q and K (key dimension)"},{"sym":"softmax","meaning":"turns each row of scores into positive weights summing to 1"}],
+"steps":["Scores = Q Kᵀ (optionally divided by √d_k).","Softmax turns each row of scores into weights.","Output row = weights times V."],
+"controls":[
+{"id":"Q","label":"Queries Q","type":"matrix","default":[[1,0],[0,1],[1,1]],"min":-3,"max":3,"step":0.5,"rowLabels":["q1","q2","q3"],"colLabels":["d1","d2"],"help":"Edit any entry."},
+{"id":"K","label":"Keys K","type":"matrix","default":[[1,0],[0,1],[1,1]],"min":-3,"max":3,"step":0.5,"rowLabels":["k1","k2","k3"],"colLabels":["d1","d2"]},
+{"id":"V","label":"Values V","type":"matrix","default":[[1,0],[0,2],[3,1]],"min":-3,"max":3,"step":0.5,"rowLabels":["v1","v2","v3"],"colLabels":["d1","d2"]},
+{"id":"scale","label":"Divide scores by √d_k","type":"toggle","default":true}],
+"explorations":[
+{"title":"Equal scores","change":"Set every entry of Q and K to 1 (use the button).","observe":"Every weight in every row is equal, so each output row is the plain average of the rows of V.","why":"Softmax depends only on differences between scores; with no differences it spreads weight evenly.","set":{"Q":[[1,1],[1,1],[1,1]],"K":[[1,1],[1,1],[1,1]]},"expect":"s.W.every(function(r){return r.every(function(w){return H.close(w,1/3);});})","highlight":["weights (softmax)","output"]},
+{"title":"One dominant score","change":"Turn the scaling off, then make q1 = (3, 3) and k1 = (3, 3), the others zero.","observe":"The first weight in row 1 dominates, so output row 1 is almost exactly v1.","why":"Softmax exponentiates scores, so a large gap makes one weight dominate.","set":{"scale":false,"Q":[[3,3],[0,0],[0,0]],"K":[[3,3],[0,0],[0,0]]},"expect":"s.W[0][0]>0.99","highlight":["weights (softmax)"]}],
+"limitation":"A common misunderstanding is that attention weights are probabilities of anything in the data; they are just normalised similarity scores. This toy uses 3 positions and 2 dimensions and no learned projections.",
+"invariants":[{"label":"each row of weights sums to 1","test":"s.W.every(function(r){return Math.abs(r.reduce(function(a,b){return a+b;},0)-1)<1e-9;})"},
+{"label":"output equals weights times V","test":"s.out.every(function(r,i){return r.every(function(v,j){var t=0;for(var k=0;k<s.W[i].length;k++)t+=s.W[i][k]*p.V[k][j];return Math.abs(t-v)<1e-9;});})"}],
+"tests":[{"label":"all-equal scores give uniform weights","set":{"Q":[[1,1],[1,1],[1,1]],"K":[[1,1],[1,1],[1,1]]},"test":"s.W.every(function(r){return r.every(function(w){return Math.abs(w-1/3)<1e-9;});})"}],
+"supported":["Eq. (1) defines Attention(Q,K,V) = softmax(QKᵀ/√d_k)V (Section 3.2.1).","The paper says the dot products are scaled by 1/√d_k.","Softmax is applied to obtain the weights on the values."],
+"ours":["The 3x2 matrices and their values are our own toy example.","We do not train anything or reproduce the paper's results."]}
+</spec>
+<compute>
+var Q=p.Q,K=p.K,V=p.V,dk=Q[0].length,n=Q.length,m=K.length;
+var f=p.scale?1/Math.sqrt(dk):1;
+var S=[],W=[],out=[];
+for(var i=0;i<n;i++){var row=[];for(var j=0;j<m;j++){var t=0;for(var d=0;d<dk;d++)t+=Q[i][d]*K[j][d];row.push(t*f);}S.push(row);
+var mx=Math.max.apply(null,row),ex=row.map(function(x){return Math.exp(x-mx);}),sm=ex.reduce(function(a,b){return a+b;},0);W.push(ex.map(function(x){return x/sm;}));}
+for(var i=0;i<n;i++){var o=[];for(var c=0;c<V[0].length;c++){var t=0;for(var j=0;j<m;j++)t+=W[i][j]*V[j][c];o.push(t);}out.push(o);}
+return {S:S,W:W,out:out,f:f,show:[{label:'scale factor',value:f},{label:'scores',value:{matrix:S,rows:['q1','q2','q3'],cols:['k1','k2','k3']}},{label:'weights (softmax)',value:{matrix:W,rows:['q1','q2','q3'],cols:['k1','k2','k3']}},{label:'output',value:{matrix:out,rows:['o1','o2','o3'],cols:['d1','d2']}}]};
+</compute>
+<draw>
+var inner=H.heat(s.S,{x:70,y:40,cw:60,ch:36,d:2,rows:['q1','q2','q3'],cols:['k1','k2','k3'],title:'scores',max:Math.max(3,Math.max.apply(null,[].concat.apply([],s.S.map(function(r){return r.map(Math.abs);}))))})+
+H.heat(s.W,{x:340,y:40,cw:60,ch:36,d:2,rows:['q1','q2','q3'],cols:['k1','k2','k3'],title:'weights (rows sum to 1)',max:1})+
+H.heat(s.out,{x:610,y:40,cw:60,ch:36,d:2,rows:['o1','o2','o3'],cols:['d1','d2'],title:'output = W·V'});
+return H.svg(760,170,inner,'scores, weights and output');
+</draw>

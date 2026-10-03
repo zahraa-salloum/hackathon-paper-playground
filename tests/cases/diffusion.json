@@ -1,0 +1,5 @@
+{
+ "source_url": "https://arxiv.org/abs/2006.11239",
+ "focus": "Denoising Diffusion Probabilistic Models, Section 2 (forward process, Eq. 4). Explain the closed-form q(x_t | x_0) = N(sqrt(alpha_bar_t) x_0, (1 - alpha_bar_t) I) with alpha_t = 1 - beta_t and alpha_bar_t = product of alpha_s. Let the learner change the noise schedule (beta start, beta end, number of steps T) and the timestep t, and show alpha_bar_t, the signal and noise scale over t as curves, and a sample of a 1-D signal x_0 at step t. Check that alpha_bar_t decreases monotonically and the signal variance share plus noise variance share is 1.",
+ "audience": "engineering undergraduate"
+}

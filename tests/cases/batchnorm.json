@@ -1,0 +1,5 @@
+{
+ "source_url": "https://arxiv.org/abs/1502.03167",
+ "focus": "Batch Normalization, Algorithm 1 (Section 3). Explain how a mini-batch is normalized: mini-batch mean and variance, the normalized values x_hat, and the scale and shift y = gamma*x_hat + beta. Let the learner edit the mini-batch values (one feature, 4-6 examples), epsilon, gamma and beta. Show the intermediate values and before/after positions on a number line. Check that x_hat has mean 0 and (almost) variance 1 and that gamma=sqrt(var+eps), beta=mean undoes the normalization.",
+ "audience": "engineering undergraduate"
+}

@@ -1,0 +1,5 @@
+{
+ "source_url": "https://arxiv.org/abs/1412.6980",
+ "focus": "Adam, Algorithm 1 and Section 2. Explain the bias-corrected first and second moment estimates on a one-dimensional gradient sequence. Let the learner change beta1, beta2 and the gradient values; show m_t, v_t, their bias-corrected versions and the step size per iteration. Check that bias correction matters most in early steps.",
+ "audience": "engineering undergraduate"
+}

@@ -1,0 +1,20 @@
+# secrets
+.env
+.env.*
+
+# generated outputs (graders generate their own; the showcase pair lives in example/out/)
+out/
+out_*/
+tests/o_*/
+tests/tmp_out/
+tests/*.png
+
+# python / editor caches
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+*.log
+
+# assignment brief (instructor's document, not part of the submission)
+Paper to Playground - Agentic Systems Hackathon.pdf

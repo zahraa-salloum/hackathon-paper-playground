@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<style>
+/* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
+:root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
+/* Ink wash: charcoal #4A4A4A, gray #CBCBCB, ivory #FFFFE3, slate #6D8196 (text/accents darkened for contrast) */
+:root[data-theme="inkwash"]{--bg:#FFFFE3;--card:#fffff2;--card2:#fbfbe9;--ink:#33363a;--mute:#5b5f63;--line:#CBCBCB;--acc:#4f6579;--accbg:#e9ecee;--onacc:#fffff2;--ok:#3f6b4a;--bad:#9b2c2c;--badbg:#f6e3df;--warn:#4A4A4A;--warnbg:#efeed2;--warnborder:#6D8196;--focus:#4f6579;--chart1:#4f6579;--chart2:#4A4A4A;--chart3:#8a98a6;--grid:#dcdcd0;--axis:#4A4A4A;--heat0:#f4f4de;--heat:#4A4A4A;--onheat:#fffff2}
+/* Cherry blossom: pink #F2C7C7, white #FFFFFF, mint #D5F3D8, rose #FFB7C5 (text/accents deepened for contrast) */
+:root[data-theme="cherry"]{--bg:#fdf2f4;--card:#ffffff;--card2:#fff8f9;--ink:#3b2a2f;--mute:#6f5a60;--line:#F2C7C7;--acc:#b03a5e;--accbg:#fbe3e6;--onacc:#fff;--ok:#2f7a47;--bad:#b3261e;--badbg:#fdecea;--warn:#2d5f3b;--warnbg:#D5F3D8;--warnborder:#5aa86f;--focus:#b03a5e;--chart1:#c2456b;--chart2:#3f9a5a;--chart3:#e08aa0;--grid:#f6dfe1;--axis:#6f5a60;--heat0:#fff1f4;--heat:#b03a5e;--onheat:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,"Segoe UI",Arial,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.75rem;line-height:1.25}
+header p{margin:2px 0;color:var(--mute)}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:16px 0}
+h2{margin:0 0 8px;font-size:1.2rem}
+h2 .n{display:inline-block;background:var(--acc);color:var(--onacc);border-radius:50%;width:1.6em;height:1.6em;text-align:center;font-size:.85em;line-height:1.6em;margin-right:8px}
+.eq{background:var(--accbg);border-left:4px solid var(--acc);padding:8px 12px;margin:8px 0;font-family:Cambria,"Times New Roman",serif;font-size:1.1rem;overflow-x:auto;white-space:pre-wrap}
+table.sym{border-collapse:collapse;width:100%}
+table.sym td{border-top:1px solid var(--line);padding:5px 8px;vertical-align:top}
+table.sym td:first-child{white-space:nowrap;font-family:Cambria,"Times New Roman",serif;font-weight:bold;width:1%}
+.play{display:grid;grid-template-columns:minmax(230px,300px) 1fr;gap:18px}
+@media(max-width:760px){.play{grid-template-columns:1fr}}
+.ctl{margin-bottom:14px}
+.ctl .mgrid{max-width:100%;overflow-x:auto}
+.ctl input[type=range]{margin:0}
+.ctl label{font-weight:600;display:block;margin-bottom:3px}
+.ctl .help{font-size:.82rem;color:var(--mute);margin-top:2px}
+.ctl input[type=range]{width:100%}
+.ctl .val{font-variant-numeric:tabular-nums;color:var(--acc);font-weight:700;margin-left:6px}
+.ctl select{width:100%;padding:5px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+.mgrid{display:inline-grid;gap:3px}
+.mgrid input{width:58px;padding:4px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:4px;font:inherit;text-align:right}
+.mgrid input.bad{border-color:var(--bad);background:var(--badbg)}
+.mgrid.dense input{width:40px;padding:3px}
+.mgrid span{font-size:.75rem;color:var(--mute);text-align:center}
+.viz{overflow-x:auto;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card)}
+.err{color:var(--bad);font-weight:600;padding:8px}
+.vals{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.val-card{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--card2);overflow-x:auto}
+.val-card b{display:block;font-size:.82rem;color:var(--mute);font-weight:600}
+.val-card .big{font-size:1.25rem;font-variant-numeric:tabular-nums;font-weight:700}
+table.mat{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9rem}
+table.mat td,table.mat th{border:1px solid var(--line);padding:2px 7px;text-align:right}
+table.mat th{background:var(--accbg);font-weight:600}
+.steps{margin:6px 0 0;padding-left:20px;color:var(--mute);font-size:.92rem}
+.exp{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:10px 0}
+.exp h3{margin:0 0 6px;font-size:1.05rem}
+.exp dl{margin:0}.exp dt{font-weight:700;color:var(--acc);margin-top:4px}.exp dd{margin:0 0 0 0}
+button{background:var(--acc);color:var(--onacc);border:0;border-radius:6px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:var(--accbg);color:var(--acc)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.warn{background:var(--warnbg);border-left:4px solid var(--warnborder);padding:8px 12px;border-radius:4px;color:var(--warn)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.two h3{margin:0 0 4px;font-size:1rem}
+.two ul{margin:0;padding-left:20px}
+.src li::marker{color:var(--ok)}.own li::marker{color:var(--warn)}
+#checks li{list-style:none;margin:2px 0}
+#checks{padding-left:0;margin:6px 0}
+.pass{color:var(--ok)}.fail{color:var(--bad);font-weight:700}
+.note{font-size:.88rem;color:var(--mute)}
+a{color:var(--acc)}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px}
+.themes{display:flex;gap:6px;flex-wrap:wrap}
+.themes button{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:5px 10px;font-size:.85rem;font-weight:600;display:inline-flex;align-items:center;gap:7px}
+.themes button[aria-pressed="true"]{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.themes .sw{width:22px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.25);display:inline-block}
+.themes-label{font-size:.8rem;color:var(--mute);align-self:center}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="top">
+    <h1 id="title"></h1>
+    <div class="themes" id="themes" role="group" aria-label="Color theme">
+      <span class="themes-label">Theme</span>
+      <button type="button" data-theme="basic" aria-pressed="true"><i class="sw" style="background:linear-gradient(90deg,#1854b0 50%,#eaf1fb 50%)"></i>Basic</button>
+      <button type="button" data-theme="inkwash" aria-pressed="false"><i class="sw" style="background:linear-gradient(90deg,#4A4A4A 25%,#CBCBCB 25% 50%,#FFFFE3 50% 75%,#6D8196 75%)"></i>Ink wash</button>
+      <button type="button" data-theme="cherry" aria-pressed="false"><i class="sw" style="background:linear-gradient(90deg,#F2C7C7 25%,#FFFFFF 25% 50%,#D5F3D8 50% 75%,#FFB7C5 75%)"></i>Cherry blossom</button>
+    </div>
+  </div>
+  <p id="meta"></p>
+</header>
+
+<section id="start"><h2><span class="n">1</span>Start here</h2>
+  <p id="idea"></p>
+  <p id="why"></p>
+  <div id="eqs"></div>
+  <table class="sym" id="symbols" aria-label="Symbols"></table>
+</section>
+
+<section id="playground"><h2><span class="n">2</span>Playground</h2>
+  <p class="note" id="howto"></p>
+  <div class="play">
+    <div><div id="controls"></div><button class="sec" id="reset" type="button">Reset to defaults</button></div>
+    <div><div class="viz" id="viz" aria-live="polite"></div><div class="vals" id="vals"></div></div>
+  </div>
+</section>
+
+<section id="explore"><h2><span class="n">3</span>Guided explorations</h2><div id="exps"></div></section>
+
+<section id="limits"><h2><span class="n">4</span>Limitation / common misunderstanding</h2><div class="warn" id="limit"></div></section>
+
+<section id="ground"><h2><span class="n">5</span>Source grounding</h2>
+  <p id="paper"></p>
+  <div class="two">
+    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
+  </div>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+</section>
+
+<section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
+  <ul id="checks"></ul>
+</section>
+</main>
+
+<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script>
+__RUNTIME__
+</script>
+<script>
+(function () {
+  'use strict';
+  var SPEC = JSON.parse(document.getElementById('spec').textContent);
+  /* ---------- theme switcher (choice is remembered when the browser allows it) ---------- */
+  var THEMES = ['basic', 'inkwash', 'cherry'];
+  function applyTheme(name) {
+    if (THEMES.indexOf(name) < 0) name = 'basic';
+    document.documentElement.setAttribute('data-theme', name);
+    Array.prototype.forEach.call(document.querySelectorAll('#themes button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-theme') === name));
+    });
+    try { localStorage.setItem('p2p-theme', name); } catch (e) {}
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#themes button'), function (b) {
+    b.addEventListener('click', function () { applyTheme(b.getAttribute('data-theme')); });
+  });
+  var savedTheme = 'basic';
+  try { savedTheme = localStorage.getItem('p2p-theme') || 'basic'; } catch (e) {}
+  applyTheme(savedTheme);
+  function $(id) { return document.getElementById(id); }
+  function el(tag, props, kids) {
+    var e = document.createElement(tag);
+    for (var k in (props || {})) { if (k === 'text') e.textContent = props[k]; else if (k === 'html') e.innerHTML = props[k]; else e.setAttribute(k, props[k]); }
+    (kids || []).forEach(function (c) { e.appendChild(c); });
+    return e;
+  }
+  function mkFn(args, src) {
+    var wrap = function (b) { return 'return (function(){\n' + b + '\n}).call(this);'; };
+    try { return new Function(args, wrap('return (' + src + '\n);')); } catch (e) { return new Function(args, wrap(src)); }
+  }
+  var compute = mkFn('p,H', SPEC.compute);
+  var draw = mkFn('s,p,H', SPEC.draw);
+  var invs = (SPEC.invariants || []).map(function (i) { return { label: i.label, fn: mkFn('s,p,H', i.test) }; });
+  var tests = (SPEC.tests || []).map(function (t) { return { label: t.label, set: t.set || {}, fn: mkFn('s,p,H', t.test) }; });
+  var ctrls = SPEC.controls || [];
+
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  function defaults() { var p = {}; ctrls.forEach(function (c) { p[c.id] = clone(c.default); }); return p; }
+  var P = defaults();
+  var widgets = {};
+
+  /* ---------- static text ---------- */
+  $('title').textContent = SPEC.title;
+  var pp = SPEC.paper || {};
+  $('meta').textContent = [pp.title, pp.authors, pp.year, pp.section].filter(Boolean).join(' · ') +
+    (SPEC.audience ? '  |  For: ' + SPEC.audience : '');
+  $('idea').textContent = SPEC.idea;
+  $('why').textContent = SPEC.why;
+  (SPEC.equations || []).forEach(function (q) { $('eqs').appendChild(el('div', { 'class': 'eq', text: q })); });
+  (SPEC.symbols || []).forEach(function (s) {
+    $('symbols').appendChild(el('tr', {}, [el('td', { text: s.sym }), el('td', { text: s.meaning })]));
+  });
+  if (SPEC.steps && SPEC.steps.length) {
+    $('howto').textContent = 'How to read the picture:';
+    var ol = el('ol', { 'class': 'steps' });
+    SPEC.steps.forEach(function (t) { ol.appendChild(el('li', { text: t })); });
+    $('howto').appendChild(ol);
+  } else $('howto').textContent = 'Change a control and watch the picture and the numbers update.';
+  $('limit').textContent = SPEC.limitation;
+  $('paper').textContent = 'Source: ' + [pp.title, pp.authors, pp.year].filter(Boolean).join(', ') + (pp.section ? ' — ' + pp.section : '') + '. ';
+  if (SPEC.source_url) { var a = el('a', { href: SPEC.source_url, text: SPEC.source_url, rel: 'noopener' }); $('paper').appendChild(a); }
+  (SPEC.supported || []).forEach(function (t) { $('supp').appendChild(el('li', { text: t })); });
+  (SPEC.ours || []).forEach(function (t) { $('ours').appendChild(el('li', { text: t })); });
+
+  /* ---------- controls ---------- */
+  function setWidget(c) {
+    var w = widgets[c.id], v = P[c.id];
+    if (c.type === 'range') { w.input.value = v; w.val.textContent = H.fmt(Number(v), 3); }
+    else if (c.type === 'toggle') w.input.checked = !!v;
+    else if (c.type === 'select') w.input.value = String(v);
+    else if (c.type === 'matrix') w.inputs.forEach(function (row, i) { row.forEach(function (inp, j) { inp.value = v[i][j]; inp.className = ''; }); });
+  }
+  ctrls.forEach(function (c) {
+    var box = el('div', { 'class': 'ctl' });
+    var id = 'c_' + c.id;
+    var lab = el('label', { 'for': id, text: c.label });
+    box.appendChild(lab);
+    var w = widgets[c.id] = {};
+    if (c.type === 'range') {
+      w.val = el('span', { 'class': 'val' }); lab.appendChild(w.val);
+      w.input = el('input', { type: 'range', id: id, min: c.min, max: c.max, step: c.step || 'any' });
+      w.input.addEventListener('input', function () { P[c.id] = Number(w.input.value); w.val.textContent = H.fmt(P[c.id], 3); update(); });
+      box.appendChild(w.input);
+    } else if (c.type === 'toggle') {
+      w.input = el('input', { type: 'checkbox', id: id });
+      lab.insertBefore(w.input, lab.firstChild); w.input.style.marginRight = '8px';
+      w.input.addEventListener('change', function () { P[c.id] = w.input.checked; update(); });
+    } else if (c.type === 'select') {
+      w.input = el('select', { id: id });
+      (c.options || []).forEach(function (o) { w.input.appendChild(el('option', { value: String(o.value != null ? o.value : o), text: String(o.label != null ? o.label : o) })); });
+      w.input.addEventListener('change', function () {
+        var opt = (c.options || []).filter(function (o) { return String(o.value != null ? o.value : o) === w.input.value; })[0];
+        var raw = opt && opt.value != null ? opt.value : w.input.value;
+        P[c.id] = (typeof c.default === 'number') ? Number(raw) : raw; update();
+      });
+      box.appendChild(w.input);
+    } else if (c.type === 'matrix') {
+      var R = c.default.length, C = c.default[0].length;
+      var g = el('div', { 'class': 'mgrid', role: 'group', 'aria-labelledby': id });
+      if (C > 4) g.className += ' dense';
+      g.style.gridTemplateColumns = (c.rowLabels ? 'auto ' : '') + 'repeat(' + C + ',auto)';
+      if (c.colLabels) { if (c.rowLabels) g.appendChild(el('span')); c.colLabels.forEach(function (t) { g.appendChild(el('span', { text: t })); }); }
+      w.inputs = [];
+      for (var i = 0; i < R; i++) {
+        w.inputs.push([]);
+        if (c.rowLabels) g.appendChild(el('span', { text: c.rowLabels[i] }));
+        for (var j = 0; j < C; j++) {
+          (function (i, j) {
+            var inp = el('input', { type: 'number', step: c.step || 'any', 'aria-label': c.label + ' row ' + (i + 1) + ' column ' + (j + 1) });
+            if (c.min != null) inp.min = c.min; if (c.max != null) inp.max = c.max;
+            inp.addEventListener('input', function () {
+              var v = parseFloat(inp.value);
+              if (!isFinite(v)) { inp.className = 'bad'; return; }
+              if (c.min != null && v < c.min) v = c.min; if (c.max != null && v > c.max) v = c.max;
+              inp.className = ''; P[c.id][i][j] = v; update();
+            });
+            w.inputs[i].push(inp); g.appendChild(inp);
+          })(i, j);
+        }
+      }
+      box.appendChild(g);
+    }
+    if (c.help) box.appendChild(el('div', { 'class': 'help', text: c.help }));
+    $('controls').appendChild(box);
+    setWidget(c);
+  });
+  $('reset').addEventListener('click', function () { P = defaults(); ctrls.forEach(setWidget); update(); });
+
+  /* ---------- rendering ---------- */
+  function showValue(v) {
+    if (typeof v === 'number') return el('div', { 'class': 'big', text: H.fmt(v, 4) });
+    if (Array.isArray(v)) return el('div', { html: H.table(v, {}) });
+    if (v && typeof v === 'object' && v.matrix) return el('div', { html: H.table(v.matrix, v) });
+    return el('div', { text: String(v) });
+  }
+  var lastS = null;
+  function runInvariants(s, p) {
+    return invs.map(function (i) {
+      var ok = false, err = '';
+      try { ok = i.fn(s, p, H) === true; } catch (e) { err = String(e.message || e); }
+      return { label: i.label, ok: ok, err: err };
+    });
+  }
+  function renderChecks(live) {
+    var ul = $('checks'); ul.textContent = '';
+    live.forEach(function (r) {
+      ul.appendChild(el('li', { 'class': r.ok ? 'pass' : 'fail', text: (r.ok ? '✓ ' : '✗ ') + r.label + (r.err ? ' (' + r.err + ')' : '') }));
+    });
+    ul.appendChild(el('li', { 'class': 'note', text: 'The first group is evaluated on your current settings; "Edge case" items use fixed settings.' }));
+    if ((SPEC.dropped_checks || []).length)
+      ul.appendChild(el('li', { 'class': 'note', text: 'Not shown because the generator could not verify them against its own calculation: ' + SPEC.dropped_checks.join('; ') + '.' }));
+  }
+  var edgeResults = tests.map(function (t) {
+    var p = defaults(); for (var k in t.set) p[k] = clone(t.set[k]);
+    var ok = false, err = '';
+    try { var s = compute(p, H); ok = t.fn(s, p, H) === true; } catch (e) { err = String(e.message || e); }
+    return { label: 'Edge case: ' + t.label, ok: ok, err: err };
+  });
+  function update() {
+    var s;
+    try {
+      s = compute(P, H); lastS = s;
+      $('viz').innerHTML = String(draw(s, P, H)).replace(/>\s*(undefined|NaN|null)\s*</g, '><');
+      var vals = $('vals'); vals.textContent = '';
+      (s.show || []).forEach(function (it) {
+        var card = el('div', { 'class': 'val-card' }, [el('b', { text: it.label }), showValue(it.value)]);
+        vals.appendChild(card);
+      });
+      renderChecks(runInvariants(s, P).concat(edgeResults));
+    } catch (e) {
+      $('viz').innerHTML = '';
+      $('viz').appendChild(el('div', { 'class': 'err', text: 'This setting could not be computed: ' + (e.message || e) }));
+    }
+  }
+
+  /* ---------- explorations ---------- */
+  (SPEC.explorations || []).forEach(function (x, idx) {
+    var card = el('div', { 'class': 'exp' }, [
+      el('h3', { text: 'Exploration ' + (idx + 1) + ': ' + x.title }),
+      el('dl', {}, [
+        el('dt', { text: 'What to change' }), el('dd', { text: x.change }),
+        el('dt', { text: 'What to observe' }), el('dd', { text: x.observe }),
+        el('dt', { text: 'Why it happens' }), el('dd', { text: x.why })
+      ])
+    ]);
+    var b = el('button', { type: 'button', text: 'Set these values for me' });
+    b.addEventListener('click', function () {
+      P = defaults();
+      for (var k in (x.set || {})) P[k] = clone(x.set[k]);
+      ctrls.forEach(setWidget); update();
+      $('playground').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    card.appendChild(el('p', {}, [b]));
+    $('exps').appendChild(card);
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
