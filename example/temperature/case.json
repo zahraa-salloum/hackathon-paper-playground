@@ -1,0 +1,5 @@
+{
+ "source_url": "https://arxiv.org/abs/1503.02531",
+ "focus": "Distilling the Knowledge in a Neural Network, Section 2 (softmax with temperature T). Explain q_i = exp(z_i/T) / sum_j exp(z_j/T) for a few editable logits. Let the learner change the logits and T and see how the probability distribution softens as T grows and sharpens toward one-hot as T approaches 0. Show the probabilities as bars. Check that the probabilities sum to 1, the ranking never changes, and T=1 gives the ordinary softmax.",
+ "audience": "engineering undergraduate"
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>Batch Normalization: the mini-batch transform (Algorithm 1)</title>
 <style>
 /* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
 :root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
@@ -112,10 +112,10 @@ a{color:var(--acc)}
 <section id="ground"><h2><span class="n">5</span>Source grounding</h2>
   <p id="paper"></p>
   <div class="two">
-    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="src"><h3>Supported by the paper excerpt</h3><ul id="supp"></ul></div>
     <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
   </div>
-  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. </p>
 </section>
 
 <section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
@@ -123,9 +123,173 @@ a{color:var(--acc)}
 </section>
 </main>
 
-<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script type="application/json" id="spec">{"title": "Batch Normalization: the mini-batch transform (Algorithm 1)", "paper": {"title": "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift", "authors": "Sergey Ioffe, Christian Szegedy", "year": "2015", "section": "Section 3, Algorithm 1"}, "equations": ["μ_B ← (1/m) Σ_{i=1}^{m} x_i", "σ²_B ← (1/m) Σ_{i=1}^{m} (x_i − μ_B)²", "x̂_i ← (x_i − μ_B) / √(σ²_B + ǫ)", "y_i ← γ x̂_i + β ≡ BN_{γ,β}(x_i)"], "idea": "Batch Normalization takes the m values of one activation inside a mini-batch and re-centres them: subtract the mini-batch mean μ_B, then divide by the mini-batch standard deviation √(σ²_B+ǫ). The result x̂ has mean 0 and variance ≈1, so the next layer always sees a fixed first/second moment. A learned scale γ and shift β then re-expand the values, so the layer can still represent any affine function it wants.", "why": "Fixing the moments of each layer input removes internal covariate shift, which lets you use larger learning rates and speeds up training; γ and β keep the network's representational power intact.", "symbols": [{"sym": "x_i", "meaning": "the i-th value of one activation in the mini-batch"}, {"sym": "m", "meaning": "mini-batch size (number of examples)"}, {"sym": "μ_B", "meaning": "mini-batch mean"}, {"sym": "σ²_B", "meaning": "mini-batch variance (biased, divide by m)"}, {"sym": "ǫ", "meaning": "small constant added to the variance for numerical stability"}, {"sym": "x̂_i", "meaning": "normalized value, mean 0 and variance ≈1"}, {"sym": "γ", "meaning": "learned scale parameter"}, {"sym": "β", "meaning": "learned shift parameter"}, {"sym": "y_i", "meaning": "output of the BN transform, passed to the next layer"}], "steps": ["Read the mini-batch values x_i in the table and the number line: the grey dots are the raw inputs.", "Follow the two statistics μ_B and σ²_B, then the normalized x̂_i — the blue dots collapse onto a mean-0, unit-variance spread.", "Finally apply y_i = γ x̂_i + β: the green dots are the values the next layer actually receives.", "Set γ = √(σ²_B+ǫ) and β = μ_B to see the transform undo itself and recover the original x_i."], "controls": [{"id": "batch", "label": "mini-batch values x (m = 4)", "type": "matrix", "default": [[2, 4, 6, 8]], "min": -20, "max": 20, "step": 0.5, "help": "One activation, four training examples. Edit any entry."}, {"id": "eps", "label": "ǫ (numerical stability)", "type": "range", "min": 0, "max": 2, "step": 0.01, "default": 0.01, "help": "Added to the mini-batch variance before the square root."}, {"id": "gamma", "label": "γ (scale)", "type": "range", "min": -5, "max": 5, "step": 0.1, "default": 1, "help": "Learned scale applied to x̂."}, {"id": "beta", "label": "β (shift)", "type": "range", "min": -10, "max": 10, "step": 0.1, "default": 0, "help": "Learned shift added after scaling."}, {"id": "show", "label": "number line shows", "type": "select", "options": [{"value": "xy", "label": "x and y"}, {"value": "xhat", "label": "x̂ only"}, {"value": "all", "label": "x, x̂ and y"}], "default": "xy", "help": "Which sets of points to plot on the number line."}], "explorations": [{"title": "Normalized values have mean 0 and variance ≈1", "change": "Set γ = 1, β = 0 and ǫ = 0.01 (the defaults), then edit the batch values.", "observe": "Whatever the raw values are, the x̂ dots sit centred on zero with a spread of about one; the readouts for mean(x̂) and var(x̂) stay pinned near 0 and 1.", "why": "Subtracting μ_B removes the offset and dividing by √(σ²_B+ǫ) rescales the spread; with ǫ small the variance of x̂ is σ²_B/(σ²_B+ǫ) ≈ 1.", "set": {"batch": [[2, 4, 6, 8]], "eps": 0.01, "gamma": 1, "beta": 0}, "expect": "H.close(s.meanXhat,0,1e-9) && Math.abs(s.varXhat-1)<0.02"}, {"title": "γ = √(σ²_B+ǫ), β = μ_B undoes the normalization", "change": "Set γ to √(σ²_B+ǫ) and β to μ_B for the current batch (the readouts give both numbers).", "observe": "The green y dots land exactly on top of the grey x dots: the BN transform has become the identity on this mini-batch.", "why": "y_i = γ x̂_i + β = √(σ²_B+ǫ)·(x_i−μ_B)/√(σ²_B+ǫ) + μ_B = x_i, so the affine parameters restore the original activations.", "set": {"batch": [[2, 4, 6, 8]], "eps": 0.01, "gamma": 2.24, "beta": 5}, "expect": "s.maxAbsErr < 0.02"}], "limitation": "The statistics are computed over the mini-batch, so BN_{γ,β}(x_i) depends on the other examples in the batch, not on x_i alone — a single example cannot be normalized in isolation. At inference the paper instead uses population statistics E[x] and Var[x] (Algorithm 2), which makes BN a fixed linear transform. Also note the variance here divides by m (biased), not m−1.", "invariants": [{"label": "x̂ has mean 0", "test": "H.close(s.meanXhat,0,1e-9)"}, {"label": "x̂ has variance σ²_B/(σ²_B+ǫ) ≤ 1", "test": "s.varXhat<=1+1e-9 && H.close(s.varXhat, s.varX/(s.varX+p.eps), 1e-9)"}, {"label": "y = γ x̂ + β for every example", "test": "s.y.every((v,i)=>H.close(v, p.gamma*s.xhat[i]+p.beta, 1e-9))"}, {"label": "mean(y) = γ·mean(x̂) + β", "test": "H.close(s.meanY, p.gamma*s.meanXhat+p.beta, 1e-9)"}], "tests": [{"label": "constant batch: variance 0, x̂ = 0, y = β", "set": {"batch": [[3, 3, 3, 3]], "eps": 0.01, "gamma": 2, "beta": 1}, "test": "H.close(s.varX,0,1e-9) && s.xhat.every(v=>H.close(v,0,1e-9)) && s.y.every(v=>H.close(v,1,1e-9))"}, {"label": "ǫ = 0 with a non-constant batch: x̂ has variance exactly 1", "set": {"batch": [[2, 4, 6, 8]], "eps": 0, "gamma": 1, "beta": 0}, "test": "H.close(s.varXhat,1,1e-9) && H.close(s.meanXhat,0,1e-9)"}, {"label": "γ = √(σ²_B+ǫ), β = μ_B recovers x", "set": {"batch": [[2, 4, 6, 8]], "eps": 0.01, "gamma": 2.24, "beta": 5}, "test": "s.maxAbsErr<0.02"}], "supported": ["Algorithm 1 computes μ_B ← (1/m)Σx_i and σ²_B ← (1/m)Σ(x_i−μ_B)² over the mini-batch (Section 3, Alg. 1).", "Normalization is x̂_i ← (x_i−μ_B)/√(σ²_B+ǫ), with ǫ a constant added to the mini-batch variance for numerical stability (Alg. 1).", "The output is y_i ← γx̂_i + β, where γ and β are learned parameters that scale and shift the normalized value (Alg. 1, Section 3).", "Setting γ = √Var[x] and β = E[x] recovers the original activations, so BN can represent the identity transform (Section 3).", "The distribution of x̂ has expected value 0 and variance 1, since Σx̂_i = 0 and (1/m)Σx̂_i² = 1, neglecting ǫ (Section 3)."], "ours": ["The page uses one activation (d = 1) and a fixed mini-batch of m = 4 editable values, so the numbers stay easy to follow.", "The number line and the readouts are a toy illustration of Algorithm 1; they are not the paper's ImageNet experiments.", "The 'undo' exploration uses γ = 2.24, β = 5, the rounded √(σ²_B+ǫ) and μ_B of the default batch [2,4,6,8]."], "compute": "const x = p.batch[0].slice();\nconst m = x.length;\nconst meanX = H.sum(x)/m;\nconst varX = H.sum(x.map(v=>(v-meanX)*(v-meanX)))/m;\nconst denom = Math.sqrt(varX + p.eps);\nconst xhat = x.map(v=>(v-meanX)/denom);\nconst y = xhat.map(v=>p.gamma*v + p.beta);\nconst meanXhat = H.sum(xhat)/m;\nconst varXhat = H.sum(xhat.map(v=>(v-meanXhat)*(v-meanXhat)))/m;\nconst meanY = H.sum(y)/m;\nconst varY = H.sum(y.map(v=>(v-meanY)*(v-meanY)))/m;\nconst undoGamma = denom;\nconst undoBeta = meanX;\nconst maxAbsErr = Math.max.apply(null, y.map((v,i)=>Math.abs(v-x[i])));\nconst show = [\n  {label:'m (mini-batch size)', value:m},\n  {label:'μ_B (mini-batch mean)', value:H.fmt(meanX,4)},\n  {label:'σ²_B (mini-batch variance)', value:H.fmt(varX,4)},\n  {label:'√(σ²_B + ǫ)', value:H.fmt(denom,4)},\n  {label:'x̂ (normalized)', value:xhat.map(v=>H.fmt(v,3)).join(', ')},\n  {label:'mean(x̂)', value:H.fmt(meanXhat,6)},\n  {label:'var(x̂)', value:H.fmt(varXhat,6)},\n  {label:'y = γx̂ + β', value:y.map(v=>H.fmt(v,3)).join(', ')},\n  {label:'mean(y)', value:H.fmt(meanY,4)},\n  {label:'var(y)', value:H.fmt(varY,4)},\n  {label:'γ that undoes BN: √(σ²_B+ǫ)', value:H.fmt(undoGamma,4)},\n  {label:'β that undoes BN: μ_B', value:H.fmt(undoBeta,4)},\n  {label:'max |y_i − x_i|', value:H.fmt(maxAbsErr,4)}\n];\nreturn {show, x, xhat, y, meanX, varX, denom, meanXhat, varXhat, meanY, varY, undoGamma, undoBeta, maxAbsErr};", "draw": "const w = 720, h = 470;\nconst inner = [];\nconst c = H.c;\nconst mode = p.show;\nconst showX = (mode==='xy'||mode==='all');\nconst showXhat = (mode==='xhat'||mode==='all');\nconst showY = (mode==='xy'||mode==='all');\n\n// ---- number line ----\nconst x0 = 60, x1 = 660, yLine = 300;\nconst all = s.x.concat(s.xhat, s.y);\nlet lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);\nif (hi - lo < 1e-6) { lo -= 1; hi += 1; }\nconst pad = 0.12*(hi-lo);\nlo -= pad; hi += pad;\nconst px = v => x0 + (v-lo)/(hi-lo)*(x1-x0);\n\ninner.push(H.text(60, 30, 'Batch Normalizing Transform: x → x̂ → y', {size:15, weight:'bold', fill:c.ink}));\ninner.push(H.text(60, 50, 'mini-batch of m = '+s.x.length+' values of one activation', {size:12, fill:c.mute}));\n\n// axis\ninner.push(H.line(x0, yLine, x1, yLine, c.axis, 1.5));\nconst ticks = 9;\nfor (let i=0;i<=ticks;i++){\n  const v = lo + (hi-lo)*i/ticks;\n  const X = px(v);\n  inner.push(H.line(X, yLine-5, X, yLine+5, c.axis, 1));\n  inner.push(H.text(X, yLine+20, H.fmt(v,1), {size:11, anchor:'middle', fill:c.mute}));\n}\ninner.push(H.text((x0+x1)/2, yLine+40, 'value', {size:12, anchor:'middle', fill:c.mute}));\n\n// zero marker\nif (lo < 0 && hi > 0) {\n  inner.push(H.line(px(0), yLine-14, px(0), yLine+14, c.grid, 1, '3,3'));\n  inner.push(H.text(px(0), yLine-20, '0', {size:11, anchor:'middle', fill:c.mute}));\n}\n\n// rows of dots\nconst rowY = {x: yLine-70, xhat: yLine-110, y: yLine-150};\nconst dot = (v, Y, col, r) => H.circle(px(v), Y, r, col);\nif (showX) {\n  inner.push(H.text(x0-8, rowY.x+4, 'x', {size:13, anchor:'end', fill:c.ink, weight:'bold'}));\n  s.x.forEach(v=>inner.push(dot(v, rowY.x, c.chart1, 6)));\n}\nif (showXhat) {\n  inner.push(H.text(x0-8, rowY.xhat+4, 'x̂', {size:13, anchor:'end', fill:c.ink, weight:'bold'}));\n  s.xhat.forEach(v=>inner.push(dot(v, rowY.xhat, c.chart2, 6)));\n}\nif (showY) {\n  inner.push(H.text(x0-8, rowY.y+4, 'y', {size:13, anchor:'end', fill:c.ink, weight:'bold'}));\n  s.y.forEach(v=>inner.push(dot(v, rowY.y, c.chart3, 6)));\n}\n\n// legend\nlet lx = 60, ly = 90;\nconst leg = [];\nif (showX) leg.push(['x (raw)', c.chart1]);\nif (showXhat) leg.push(['x̂ (normalized)', c.chart2]);\nif (showY) leg.push(['y = γx̂+β', c.chart3]);\nleg.forEach(([lab,col])=>{\n  inner.push(H.circle(lx, ly, 6, col));\n  inner.push(H.text(lx+12, ly+4, lab, {size:12, fill:c.ink}));\n  lx += 150;\n});\n\n// ---- heat blocks ----\nconst heatY = 350;\nconst cw = 60, ch = 34;\nconst rows = ['x'], cols = s.x.map((_,i)=>'i'+(i+1));\ninner.push(H.heat([s.x], {x:60, y:heatY, cw:cw, ch:ch, d:2, rows:rows, cols:cols, title:'x (raw)'}));\ninner.push(H.heat([s.xhat], {x:60+cw*s.x.length+70, y:heatY, cw:cw, ch:ch, d:2, rows:['x̂'], cols:cols, title:'x̂ (normalized)'}));\ninner.push(H.heat([s.y], {x:60+2*(cw*s.x.length+70), y:heatY, cw:cw, ch:ch, d:2, rows:['y'], cols:cols, title:'y = γx̂+β'}));\n\nreturn H.svg(w, h, inner.join(''), 'Batch normalization number line and value tables');", "source_url": "https://arxiv.org/abs/1502.03167", "audience": "engineering undergraduate"}</script>
 <script>
-__RUNTIME__
+/* Generic drawing/formatting helpers shared by the page and the Python-side checker.
+   Pure JS: no DOM access, so it also runs inside the headless QuickJS checker.
+   Generated spec code calls these as H.*; every helper returns an SVG/HTML string. */
+var H = (function () {
+  function num(x) { x = Number(x); return isFinite(x) ? x : 0; }
+  function fmt(x, d) {
+    if (typeof x !== 'number') return String(x);
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
+    d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
+    var r = Number(x.toFixed(d));
+    if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
+    return String(r);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Theme-aware colours: CSS variables defined per theme in template.html, so charts follow the theme switcher.
+  var C = { ink: 'var(--ink)', mute: 'var(--mute)', chart1: 'var(--chart1)', chart2: 'var(--chart2)', chart3: 'var(--chart3)',
+            good: 'var(--ok)', bad: 'var(--bad)', grid: 'var(--grid)', axis: 'var(--axis)', bg: 'var(--card)' };
+  // sequential colour, t in [0,1]: theme's pale heat colour -> theme's deep heat colour
+  function color(t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return 'color-mix(in srgb, var(--heat) ' + Math.round(t * 100) + '%, var(--heat0))';
+  }
+  function ink(t) { return num(t) > 0.55 ? 'var(--onheat)' : 'var(--ink)'; }
+  function svg(w, h, inner, label) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h +
+      '" width="100%" style="max-width:' + w + 'px;height:auto" role="img" aria-label="' + esc(label || 'visualization') +
+      '" font-family="system-ui,Segoe UI,Arial,sans-serif">' + inner + '</svg>';
+  }
+  function rect(x, y, w, h, fill, extra) {
+    return '<rect x="' + num(x) + '" y="' + num(y) + '" width="' + Math.max(0, num(w)) + '" height="' + Math.max(0, num(h)) +
+      '" fill="' + (fill || 'var(--grid)') + '" ' + (extra || '') + '/>';
+  }
+  function text(x, y, s, o) {
+    o = o || {};
+    if (s === undefined || s === null || (typeof s === 'number' && !isFinite(s))) s = '';
+    return '<text x="' + num(x) + '" y="' + num(y) + '" font-size="' + (o.size || 12) + '" text-anchor="' + (o.anchor || 'start') +
+      '" fill="' + (o.fill || 'var(--ink)') + '"' + (o.weight ? ' font-weight="' + o.weight + '"' : '') +
+      (o.rotate ? ' transform="rotate(' + o.rotate + ' ' + num(x) + ' ' + num(y) + ')"' : '') + '>' + esc(s) + '</text>';
+  }
+  function line(x1, y1, x2, y2, stroke, w, dash) {
+    return '<line x1="' + num(x1) + '" y1="' + num(y1) + '" x2="' + num(x2) + '" y2="' + num(y2) + '" stroke="' + (stroke || 'var(--axis)') +
+      '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  }
+  function circle(x, y, r, fill, extra) {
+    return '<circle cx="' + num(x) + '" cy="' + num(y) + '" r="' + num(r) + '" fill="' + (fill || 'var(--chart2)') + '" ' + (extra || '') + '/>';
+  }
+  // Matrix as coloured cells with numbers. o: x,y,cw,ch,d,max,min,rows,cols,title,signed
+  function heat(M, o) {
+    o = o || {};
+    var x0 = o.x || 0, y0 = o.y || 0, cw = o.cw || 54, ch = o.ch || 34, d = o.d == null ? 2 : o.d;
+    var flat = [].concat.apply([], M), mx = o.max != null ? o.max : Math.max.apply(null, flat.map(Math.abs).concat([1e-9]));
+    var mn = o.min != null ? o.min : 0;
+    var out = '';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (!Array.isArray(o.cols)) o.cols = null;
+    if (o.title) out += text(x0, y0 - 8 - (o.cols ? 14 : 0), o.title, { weight: 'bold', size: 13 });
+    for (var i = 0; i < M.length; i++) {
+      if (o.rows && o.rows[i] != null) out += text(x0 - 6, y0 + i * ch + ch / 2 + 4, o.rows[i], { anchor: 'end', size: 11 });
+      for (var j = 0; j < M[i].length; j++) {
+        var v = num(M[i][j]), t = mx > mn ? (Math.abs(v) - mn) / (mx - mn) : 0;
+        out += rect(x0 + j * cw, y0 + i * ch, cw - 2, ch - 2, color(t), 'rx="3"') +
+          text(x0 + j * cw + (cw - 2) / 2, y0 + i * ch + ch / 2 + 4, fmt(v, d), { anchor: 'middle', size: 12, fill: ink(t) });
+      }
+    }
+    if (o.cols) for (var k = 0; k < (M[0] || []).length && k < o.cols.length; k++) out += text(x0 + k * cw + cw / 2, y0 - 6, o.cols[k], { anchor: 'middle', size: 11 });
+    return out;
+  }
+  // Vertical bars. o: x,y,w,h,labels,max,d,fill,fills,title,ylabel
+  function bars(vals, o) {
+    o = o || {};
+    var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
+    if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    for (var t = 0; t <= 4; t++) {
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
+      if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
+    }
+    for (var i = 0; i < n; i++) {
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
+    }
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // Line plot. series:[{xs,ys,color,label,dash}] o: x,y,w,h,xmin,xmax,ymin,ymax,xlabel,ylabel,title,marks:[{x,y,label}]
+  function plot(series, o) {
+    o = o || {};
+    var x0 = o.x || 46, y0 = o.y || 14, w = o.w || 320, h = o.h || 200, all = [];
+    series.forEach(function (s) { s.xs.forEach(function (_, i) { all.push([num(s.xs[i]), num(s.ys[i])]); }); });
+    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, all.map(function (p) { return p[0]; }));
+    var xmax = o.xmax != null ? o.xmax : Math.max.apply(null, all.map(function (p) { return p[0]; }));
+    var ymin = o.ymin != null ? o.ymin : Math.min.apply(null, all.map(function (p) { return p[1]; }));
+    var ymax = o.ymax != null ? o.ymax : Math.max.apply(null, all.map(function (p) { return p[1]; }));
+    if (xmax === xmin) xmax = xmin + 1;
+    if (ymax === ymin) ymax = ymin + 1;
+    function X(v) { return x0 + (num(v) - xmin) / (xmax - xmin) * w; }
+    function Y(v) { return y0 + h - (num(v) - ymin) / (ymax - ymin) * h; }
+    var out = '';
+    if (o.title) out += text(x0, y0 - 4, o.title, { weight: 'bold', size: 13 });
+    for (var t = 0; t <= 4; t++) {
+      var gx = x0 + w * t / 4, gy = y0 + h - h * t / 4;
+      out += line(gx, y0, gx, y0 + h, 'var(--grid)') + line(x0, gy, x0 + w, gy, 'var(--grid)') +
+        text(gx, y0 + h + 15, fmt(xmin + (xmax - xmin) * t / 4, 2), { anchor: 'middle', size: 10 }) +
+        text(x0 - 6, gy + 4, fmt(ymin + (ymax - ymin) * t / 4, 2), { anchor: 'end', size: 10 });
+    }
+    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    series.forEach(function (s, k) {
+      var pts = s.xs.map(function (_, i) { return X(s.xs[i]).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1); }).join(' ');
+      out += '<polyline points="' + pts + '" fill="none" stroke="' + (s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3]) +
+        '" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+      if (s.label) out += text(x0 + w - 4, y0 + 14 + 14 * k, s.label, { anchor: 'end', size: 11, fill: s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3] });
+    });
+    (o.marks || []).forEach(function (m) {
+      out += circle(X(m.x), Y(m.y), 5, m.color || 'var(--chart2)') +
+        (m.label ? text(X(m.x) + 8, Y(m.y) - 8, m.label, { size: 11 }) : '');
+    });
+    if (o.xlabel) out += text(x0 + w / 2, y0 + h + 32, o.xlabel, { anchor: 'middle', size: 11 });
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // HTML table of a matrix. o: rows, cols, d
+  function table(M, o) {
+    o = o || {};
+    if (!Array.isArray(M[0])) M = [M];
+    var d = o.d == null ? 3 : o.d, s = '<table class="mat">';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (Array.isArray(o.cols)) s += '<tr><th></th>' + o.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    M.forEach(function (r, i) {
+      s += '<tr>' + (o.rows && o.rows[i] != null ? '<th>' + esc(o.rows[i]) + '</th>' : (o.rows ? '<th></th>' : '')) +
+        r.map(function (v) { return '<td>' + fmt(v, d) + '</td>'; }).join('') + '</tr>';
+    });
+    return s + '</table>';
+  }
+  // ---- small numeric helpers (for compute code and invariant tests) ----
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  // numbers, or arrays/matrices of any depth compared element by element (same shape required)
+  function close(a, b, tol) {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!close(a[i], b[i], tol)) return false;
+      return true;
+    }
+    return Math.abs(a - b) <= (tol == null ? 1e-9 : tol) * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+  function rowSums(M) { return M.map(sum); }
+  function transpose(M) { return M[0].map(function (_, j) { return M.map(function (r) { return r[j]; }); }); }
+  function matmul(A, B) {
+    return A.map(function (r) { return B[0].map(function (_, j) { var t = 0; for (var k = 0; k < r.length; k++) t += r[k] * B[k][j]; return t; }); });
+  }
+  return { c: C, sum: sum, close: close, rowSums: rowSums, transpose: transpose, matmul: matmul, num: num, fmt: fmt, esc: esc, color: color, ink: ink, svg: svg, rect: rect, text: text, line: line, circle: circle, heat: heat, bars: bars, plot: plot, table: table };
+})();
+
 </script>
 <script>
 (function () {

@@ -179,7 +179,7 @@ idea: 2-4 plain sentences naming the mechanism for the stated audience. why: 1-2
 symbols: [{sym, meaning}] for every symbol used in equations/visual/controls.
 steps: 2-4 short strings on how to read the visual.
 controls: >=2 controls that change the result, each {id,label,type,help,...}. ONLY these four types exist (no text/number/list inputs): for a short list of numbers (e.g. a mini-batch of 4-6 values) use a ONE-ROW matrix control, default [[v1,v2,...]] with min,max,step. type "range": min,max,step,default(number). "toggle": default(bool). "select": options[{value,label}], default(one option value). "matrix": default = 2D array (<=4x4), min,max,step for entries, optional rowLabels,colLabels. If the brief asks to change a count (e.g. number of outcomes), make it a range/select that the compute function uses.
-explorations: EXACTLY 2 of {title,change,observe,why,set}. set = {controlId:value} (matrix = full 2D array) that realises the exploration. change = what to do, observe = what to look for (quote real numbers that compute produces from those settings), why = the mechanism behind it.
+explorations: EXACTLY 2 of {title,change,observe,why,set,expect}. set = {controlId:value} (matrix = full 2D array) that realises the exploration and MUST actually produce the effect named in the title (a preset for "equal scores" needs truly equal scores; "one dominates" needs a clearly dominant value). change = what to do. observe = what to look for, written QUALITATIVELY with no computed numbers (the page shows the computed readouts for that preset right below it). why = the mechanism behind it. expect = a JS boolean expression over (s,p,H) that is true at the set values and states the title's claim (e.g. "s.W.every(r=>r.every(w=>H.close(w,1/r.length)))"); it is evaluated on the page.
 limitation: one assumption, limitation or common misunderstanding (2-3 sentences).
 invariants: 2-4 {label,test}; test is a JS expression over (s,p,H) that must be true for EVERY valid setting (floats: compare with 1e-9 tolerance). Choose the checks the brief asks for.
 tests: 2-3 {label,set,test}: fixed edge cases (set overrides defaults; test over (s,p,H)) taken from the brief or the paper's own special cases.
@@ -196,7 +196,7 @@ H.table(M,{rows,cols,d}) HTML table.
 Colours: the page has 3 colour themes switched live, so NEVER hard-code hex/rgb colours in draw. Use the theme variables: H.c.ink (text), H.c.mute (secondary text), H.c.chart1/chart2/chart3 (series, in that order), H.c.good, H.c.bad, H.c.grid, H.c.axis, H.color(t0to1) for heat cells; H.heat/H.bars/H.plot already use them by default.
 Numeric helpers (use them in compute and in invariant/test expressions; never compare floats with ===): H.sum(arr) H.close(a,b,tol=1e-9) H.rowSums(M) H.transpose(M) H.matmul(A,B).
 Invariant/test expressions read the compute result as s.<key> and the control values as p.<controlId>; use only keys your compute returns.
-In "observe" quote only numbers that your compute produces at that exploration's `set` values (they are machine-checked); write inputs as given, results to the digits the readouts show.
+Never quote computed numbers in "observe"; in "why" quote only numbers your compute produces at that `set` (machine-checked).
 
 Quality rules: be scientifically exact and consistent with the source; use the source's notation; define terms for the audience; keep the page focused on the requested concept only; prefer a small default example whose numbers are easy to follow. If source text is missing, rely on your knowledge of the paper and say nothing you are unsure of. Be concise: no filler, compact code."""
 
@@ -495,9 +495,11 @@ function runChecks(spec, cfg){
   (spec.invariants||[]).forEach(function(i){ try{ invs.push({l:i.label,f:mkFn('s,p,H',i.test)}); }catch(e){ err('iv'+i.label,'[spec.invariants] "'+i.label+'" has a syntax error: '+e.message); } });
   (spec.tests||[]).forEach(function(t){ try{ tests.push({l:t.label,set:t.set||{},f:mkFn('s,p,H',t.test)}); }catch(e){ err('tv'+t.label,'[spec.tests] "'+t.label+'" has a syntax error: '+e.message); } });
   function short(p){ return JSON.stringify(p).slice(0,140); }
+  function hint(e){ var m=String(e&&e.message||''), st=String(e&&e.stack||'').split('\n').slice(0,2).join(' ').replace(/\s+/g,' ').slice(0,120);
+    return (/not a function|not defined/.test(m)?' - the only H helpers are: '+Object.keys(H).join(','):'')+(st?' ['+st+']':''); }
   function evalSet(p, tag){
     var s;
-    try{ s=compute(clone(p),H); }catch(e){ err('ct'+e.message,'[compute] threw "'+e.message+'" for '+short(p)); return null; }
+    try{ s=compute(clone(p),H); }catch(e){ err('ct'+e.message,'[compute] threw "'+e.message+'" for '+short(p)+hint(e)); return null; }
     if(!s||typeof s!=='object'||!Array.isArray(s.show)||s.show.length<2){
       err('cs','[compute] body returned '+(s===undefined?'undefined (it must END with `return {show:[...],...};` at top level, not define a function)':(Array.isArray(s)?'an array':typeof s==='object'&&s?'an object with keys ['+Object.keys(s).join(',')+'] and show='+typeof s.show:typeof s))+'; it must return an object with show:[at least 2 {label,value}]'); return null; }
     if(nonfinite(s)){ err('nf','[compute] output contains NaN/Infinity for '+short(p)); }
@@ -505,7 +507,7 @@ function runChecks(spec, cfg){
     try{ var h=draw(s,clone(p),H);
       if(typeof h!=='string'||h.length<80||h.indexOf('<svg')<0){ err('dh','[draw] must return an SVG string built with H.svg'); }
       else { var bm=/NaN|undefined|Infinity/.exec(h); if(bm){ err('dn','[draw] output contains '+bm[0]+' for '+short(p)+' near: ...'+h.slice(Math.max(0,bm.index-90),bm.index+30).replace(/\s+/g,' ')+'...'); } out.drawn++; }
-    }catch(e){ err('dt'+e.message,'[draw] threw "'+e.message+'" for '+short(p)); }
+    }catch(e){ err('dt'+e.message,'[draw] threw "'+e.message+'" for '+short(p)+hint(e)); }
     return s;
   }
   cfg.sets.forEach(function(p){
@@ -525,7 +527,7 @@ function runChecks(spec, cfg){
   // numbers the calculation produces at each exploration's preset (used to verify the "observe" text)
   out.expl=(spec.explorations||[]).map(function(x){
     var p=clone(cfg.base); for(var k in (x.set||{})) p[k]=clone(x.set[k]);
-    var nums=[], show='', sc=[];
+    var nums=[], show='', sc=[], okx=null;
     try{ var s=compute(clone(p),H); show=JSON.stringify(s.show).slice(0,400);
       sc=s.show.filter(function(it){ return typeof it.value==='number'||typeof it.value==='string'; }).slice(0,8)
         .map(function(it){ return {label:String(it.label),value:it.value}; });
@@ -534,7 +536,14 @@ function runChecks(spec, cfg){
         else if(Array.isArray(v)) v.forEach(function(y){ w(y,d+1); });
         else if(v&&typeof v==='object') Object.keys(v).forEach(function(k){ w(v[k],d+1); }); })(s,0);
     }catch(e){}
-    return {nums:nums, show:show, scalars:sc};
+    var shownums=[];
+    try{ (function w2(v,d){ if(shownums.length>2000||d>6) return; if(typeof v==='number'){ if(isFinite(v)) shownums.push(v); }
+        else if(typeof v==='string'){ (v.match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/gi)||[]).forEach(function(t){ shownums.push(parseFloat(t)); }); }
+        else if(Array.isArray(v)) v.forEach(function(y){ w2(y,d+1); });
+        else if(v&&typeof v==='object') Object.keys(v).forEach(function(k){ if(k!=='rows'&&k!=='cols') w2(v[k],d+1); }); })(s.show.map(function(it){ return it.value; }),0);
+    }catch(e3){}
+    if(x.expect){ try{ okx=mkFn('s,p,H',x.expect)(compute(clone(p),H),clone(p),H)===true; }catch(e4){ okx=false; } }
+    return {nums:nums, show:show, scalars:sc, shownums:shownums, expectOk:okx};
   });
   return out;
 }
@@ -589,41 +598,43 @@ def check_all(spec):
     summary = {"param_sets_computed": res["computed"], "param_sets_drawn": res["drawn"], "controls_that_change_output": res["influential"]}
     if len(res["influential"]) < 2:
         failures.append("[spec.controls] at least 2 controls must visibly change the readouts or the picture; only these do: %s" % res["influential"])
-    if not failures:
+    if res.get("computed", 0) > 0:
         claims = check_exploration_claims(spec, res.get("expl", []))
         summary["exploration_claims_checked"] = len(res.get("expl", []))
         failures += claims
+        for i, (x, e) in enumerate(zip(spec.get("explorations", []), res.get("expl", []))):
+            if x.get("expect") and e.get("expectOk") is not True:
+                failures.append("[spec.expect] exploration %d: its expect claim is false at its own settings (readouts there: %s). "
+                                "Either change `set` so the effect named in the title really happens, or correct `expect` if it is "
+                                "too strict (e.g. allow for epsilon or say 'approximately')." % (i + 1, e.get("show", "")[:260]))
     return failures, summary
 
 
-def _fmt_value(v):
-    if isinstance(v, (int, float)):
-        return ("%.4g" % v) if abs(v) >= 1e-4 or v == 0 else ("%.3e" % v)
-    return str(v)
-
-
 def repair_unverified_observations(spec):
-    """Replace any `observe` text whose numbers the calculation does not reproduce with a sentence built from the
-    calculation's own readouts at that exploration's settings. Returns (spec, repaired_indices)."""
+    """Remove only the sentences of `observe`/`why` whose numbers the page does not reproduce; the page itself shows the
+    computed readouts under each exploration. Returns (spec, repaired_indices)."""
     try:
         res = run_js_checks({**spec, "invariants": [], "tests": []})
     except Exception:
         return spec, []
-    expl = res.get("expl", [])
     fixed = []
     new = dict(spec)
     new["explorations"] = [dict(x) for x in spec["explorations"]]
-    for i, (x, e) in enumerate(zip(spec["explorations"], expl)):
-        if check_exploration_claims({**spec, "explorations": [x]}, [e]):
-            vals = "; ".join("%s = %s" % (s["label"], _fmt_value(s["value"])) for s in e.get("scalars", []))
-            new["explorations"][i]["observe"] = ("With these settings the readouts above show: " + vals + ". "
-                                                 "(These values come straight from the page's calculation.) " +
-                                                 "Compare them with the starting values and note what moved.") if vals else x["observe"]
-            fixed.append(i + 1)
+    for i, (x, e) in enumerate(zip(spec["explorations"], res.get("expl", []))):
+        shown, anywhere = _claim_sources(spec, x, e)
+        for field, have, strict, fallback in (
+                ("observe", shown, True, "Compare the readouts computed below with the starting values."),
+                ("why", anywhere, False, "See the readouts computed below.")):
+            text = x.get(field, "")
+            if _bad_numbers(text, have, strict):
+                keep = [s for s in re.split(r"(?<=[.;!?])\s+", text.strip()) if not _bad_numbers(s, have, strict)]
+                new["explorations"][i][field] = " ".join(keep) if keep else fallback
+                if i + 1 not in fixed:
+                    fixed.append(i + 1)
     return new, fixed
 
 
-NUM_RE = re.compile(r"(?<![\w.])(-?\d+)\s*/\s*(\d+)(?![\w.])|(?<![\w.])-?\d+\.\d+")
+NUM_RE = re.compile(r"(?<![\w.])(-?\d+)\s*/\s*(\d+)(?![\w.])|(?<![\w.])-?\d+\.\d+(?:[eE][-+]?\d+)?")
 
 
 def _numbers_in(v, out):
@@ -639,30 +650,58 @@ def _numbers_in(v, out):
             _numbers_in(i, out)
 
 
+def unverified_explorations(spec):
+    """1-based indices of explorations whose optional `expect` claim is false at their preset (0 tokens; no revision)."""
+    if not any(x.get("expect") for x in spec.get("explorations", [])):
+        return []
+    try:
+        expl = run_js_checks({**spec, "invariants": [], "tests": []}).get("expl", [])
+    except Exception:
+        return []
+    return [i + 1 for i, (x, e) in enumerate(zip(spec["explorations"], expl)) if x.get("expect") and e.get("expectOk") is not True]
+
+
+def _bad_numbers(text, have, strict):
+    """Decimals/fractions quoted in `text` that no number in `have` reproduces. strict: within half a unit of the last
+    quoted digit (a correctly rounded quote); lenient: within one unit."""
+    bad = []
+    for m in NUM_RE.finditer(text or ""):
+        tok = m.group(0)
+        if m.group(1) is not None:
+            if int(m.group(2)) == 0:
+                continue
+            val, tol = int(m.group(1)) / int(m.group(2)), 5e-3
+        else:
+            mant, _, exp = tok.lower().partition("e")
+            val = float(tok)
+            tol = 10.0 ** (-len(mant.split(".")[1]) + (int(exp) if exp else 0)) * (0.5 if strict else 1.0)
+        if not any(abs(abs(c) - abs(val)) <= tol * 1.0001 + 1e-12 for c in have):
+            bad.append(tok)
+    return bad
+
+
+def _claim_sources(spec, x, e):
+    inputs = []
+    _numbers_in(x.get("set"), inputs)
+    for c in spec["controls"]:
+        _numbers_in(c.get("default"), inputs)
+    shown = list(e.get("shownums", [])) + inputs        # what the learner can actually see: labelled readouts and inputs
+    anywhere = list(e.get("nums", [])) + inputs         # any number the calculation produces
+    return shown, anywhere
+
+
 def check_exploration_claims(spec, expl):
-    """Each decimal/fraction quoted in an exploration's `observe` text must be an input value or appear in the
-    calculation's output at that exploration's settings (within the quoted precision)."""
+    """Numbers quoted in an exploration must be reproduced by the page at that exploration's settings:
+    "observe" strictly against the labelled readouts, "why" leniently against anything the calculation produces."""
     problems = []
     for i, (x, e) in enumerate(zip(spec.get("explorations", []), expl)):
-        have = list(e.get("nums", []))
-        _numbers_in(x.get("set"), have)
-        for c in spec["controls"]:
-            _numbers_in(c.get("default"), have)
-        bad = []
-        for m in NUM_RE.finditer(x.get("observe", "")):
-            tok = m.group(0)
-            if m.group(1) is not None:
-                if int(m.group(2)) == 0:
-                    continue
-                val, tol = int(m.group(1)) / int(m.group(2)), 5e-3
-            else:
-                val, tol = float(tok), 10.0 ** -len(tok.split(".")[1])
-            if not any(abs(abs(c) - abs(val)) <= tol * 1.0001 + 1e-12 for c in have):
-                bad.append(tok)
-        if bad:
-            problems.append('[spec.explorations] exploration %d "observe" cites %s, which the calculation does not produce at that '
-                            'exploration\'s settings (its readouts there: %s). Rewrite "observe" using only numbers it produces.'
-                            % (i + 1, ", ".join(sorted(set(bad))), e.get("show", "")[:300]))
+        shown, anywhere = _claim_sources(spec, x, e)
+        for field, have, strict in (("observe", shown, True), ("why", anywhere, False)):
+            bad = _bad_numbers(x.get(field, ""), have, strict)
+            if bad:
+                problems.append('[spec.explorations] exploration %d "%s" cites %s, which the page does not show at that '
+                                'exploration\'s settings (its readouts there: %s). Use only numbers it produces.'
+                                % (i + 1, field, ", ".join(sorted(set(bad))), e.get("show", "")[:300]))
     return problems
 
 
@@ -750,65 +789,79 @@ def main():
 
         spec, blocks_have, summary, failures = None, {}, {}, ["no output yet"]
         revisions = 0
-        prev_failures = None
-        for attempt in range(1 + MAX_REVISIONS):
-            try:
-                reply = llm_call(trace, key, a.model, messages, FIRST_MAX_TOKENS if attempt == 0 else REVISE_MAX_TOKENS,
-                                 "generate" if attempt == 0 else "revise_%d" % attempt)
-            except Budget as e:
-                trace.log("budget", "stop", "limit", reason=str(e))
-                break
-            blocks, problems = parse_reply(reply)
-            if "spec" in blocks:
-                blocks_have["spec"] = blocks["spec"]
-            for k, args in (("compute", "p,H"), ("draw", "s,p,H")):
-                if k in blocks:
-                    blocks_have[k] = normalize_body(blocks[k], args)
-            trace.log("parse", "extract_blocks", "ok" if not problems else "problems", blocks=sorted(blocks.keys()), problems=problems)
-            missing = [k for k in ("spec", "compute", "draw") if k not in blocks_have]
-            if missing or problems:
-                failures = problems + ["missing block(s): " + ", ".join(missing)] if missing else problems
-            else:
-                spec = dict(blocks_have["spec"])
-                spec["compute"], spec["draw"] = blocks_have["compute"], blocks_have["draw"]
-                failures, summary = check_all(spec)
-                trace.log("check", "validate_spec_and_execute_js", "pass" if not failures else "fail", failures=failures, **summary)
-                if not failures:
+        base_messages = list(messages)
+        out_of_budget = False
+        for restart in range(2):
+            prev_failures = None
+            for attempt in range(1 + MAX_REVISIONS):
+                try:
+                    reply = llm_call(trace, key, a.model, messages, FIRST_MAX_TOKENS if attempt == 0 else REVISE_MAX_TOKENS,
+                                     "generate" if attempt == 0 else "revise_%d" % attempt)
+                except Budget as e:
+                    trace.log("budget", "stop", "limit", reason=str(e))
+                    out_of_budget = True
                     break
-                if attempt >= 1 and all(f.startswith("[spec.explorations]") for f in failures):
-                    break  # only prose-number mismatches left: stop spending tokens, report them in the trace
-            if attempt == MAX_REVISIONS:
-                break
-            if attempt >= 1 and failures == prev_failures:
-                trace.log("revise", "stop_no_progress", "same_failures_twice", failures=failures[:4])
-                break
-            prev_failures = list(failures)
-            revisions += 1
-            trace.log("revise", "request_fix", "scheduled", revision=revisions, failures=failures[:8])
-            # keep the context small: original request + the latest merged blocks + the new feedback
-            latest = "".join("<%s>%s</%s>\n" % (k, json.dumps(blocks_have[k], ensure_ascii=False) if k == "spec" else blocks_have[k], k)
-                             for k in ("spec", "compute", "draw") if k in blocks_have)
-            messages = messages[:2] + [{"role": "assistant", "content": latest or reply},
-                                       {"role": "user", "content": revision_message(failures)}]
+                blocks, problems = parse_reply(reply)
+                if "spec" in blocks:
+                    blocks_have["spec"] = blocks["spec"]
+                for k, args in (("compute", "p,H"), ("draw", "s,p,H")):
+                    if k in blocks:
+                        blocks_have[k] = normalize_body(blocks[k], args)
+                trace.log("parse", "extract_blocks", "ok" if not problems else "problems", blocks=sorted(blocks.keys()), problems=problems)
+                missing = [k for k in ("spec", "compute", "draw") if k not in blocks_have]
+                if missing or problems:
+                    failures = problems + ["missing block(s): " + ", ".join(missing)] if missing else problems
+                else:
+                    spec = dict(blocks_have["spec"])
+                    spec["compute"], spec["draw"] = blocks_have["compute"], blocks_have["draw"]
+                    failures, summary = check_all(spec)
+                    trace.log("check", "validate_spec_and_execute_js", "pass" if not failures else "fail", failures=failures, **summary)
+                    if not failures:
+                        break
+                    if attempt >= 1 and all(f.startswith(("[spec.explorations]", "[spec.expect]")) for f in failures):
+                        break  # only prose numbers / exploration claims left after one revision: stop spending tokens
+                if attempt == MAX_REVISIONS:
+                    break
+                if attempt >= 1 and failures == prev_failures and not any("output contains" in f for f in failures):
+                    trace.log("revise", "stop_no_progress", "same_failures_twice", failures=failures[:4])
+                    break
+                prev_failures = list(failures)
+                revisions += 1
+                trace.log("revise", "request_fix", "scheduled", revision=revisions, failures=failures[:8])
+                # keep the context small: original request + the latest merged blocks + the new feedback
+                latest = "".join("<%s>%s</%s>\n" % (k, json.dumps(blocks_have[k], ensure_ascii=False) if k == "spec" else blocks_have[k], k)
+                                 for k in ("spec", "compute", "draw") if k in blocks_have)
+                messages = messages[:2] + [{"role": "assistant", "content": latest or reply},
+                                           {"role": "user", "content": revision_message(failures)}]
 
-        if spec is not None and failures and all(re.match(r'\[spec\.(invariants|tests)\] "', f) for f in failures):
+            fatal = [f for f in failures if not f.startswith(("[spec.explorations]", "[spec.expect]", "[spec.invariants]", "[spec.tests]"))]
+            if spec is not None and not fatal:
+                break
+            if restart or out_of_budget or trace.calls > MAX_CALLS - 3 or time.time() - START > DEADLINE_S - 150 \
+                    or MAX_COMPLETION_TOKENS - trace.completion_tokens < 12000:
+                break
+            trace.log("revise", "restart_generation", "no_usable_page_yet", failures=failures[:4])
+            messages, blocks_have, spec, prev_failures, failures = list(base_messages), {}, None, None, ["no output yet"]
+
+        INV = re.compile(r'\[spec\.(?:invariants|tests)\] "')
+        if spec is not None and any(INV.match(f) for f in failures) and all(INV.match(f) or f.startswith(("[spec.explorations]", "[spec.expect]")) for f in failures):
             # Only self-checks written by the model still fail: do not publish claims we could not verify.
-            bad_labels = {re.match(r'\[spec\.(?:invariants|tests)\] "(.*?)"', f).group(1) for f in failures}
+            bad_labels = {re.match(r'\[spec\.(?:invariants|tests)\] "(.*?)"', f).group(1) for f in failures if INV.match(f)}
             kept = dict(spec)
             for k in ("invariants", "tests"):
                 kept[k] = [x for x in spec.get(k, []) if x.get("label") not in bad_labels]
             if kept["invariants"]:
                 f2, s2 = check_all(kept)
-                f2 = [f for f in f2 if not f.startswith("[spec.explorations]")]  # prose numbers are repaired below
+                f2 = [f for f in f2 if not f.startswith(("[spec.explorations]", "[spec.expect]"))]  # repaired / flagged below
                 trace.log("check", "drop_unverifiable_checks", "pass" if not f2 else "fail", dropped=sorted(bad_labels), failures=f2, **s2)
                 if not f2:
                     kept["dropped_checks"] = sorted(bad_labels)  # disclosed on the page, never silent
-                    spec, failures = kept, []
+                    spec, failures = kept, [f for f in failures if f.startswith(("[spec.explorations]", "[spec.expect]"))]
         if spec is not None and all(k in spec for k in ("compute", "draw")) and not validate_spec(spec):
             spec, fixed = repair_unverified_observations(spec)
             if fixed:
                 trace.log("revise", "replace_unverified_observations", "ok", explorations=fixed,
-                          note="quoted numbers did not match the calculation; text rebuilt from computed readouts")
+                          note="sentences whose numbers the page does not reproduce were removed")
             failures = [f for f in failures if not f.startswith("[spec.explorations]")]
         usable = spec is not None and all(k in spec for k in ("compute", "draw"))
         if usable and failures:
@@ -825,6 +878,14 @@ def main():
             trace.log("finish", "no_usable_page", "failed", failures=failures[:8])
             code = 2
         else:
+            flagged = unverified_explorations(spec)
+            if flagged:
+                spec = dict(spec)
+                spec["explorations"] = [dict(x, unverified=True) if (n + 1) in flagged else x for n, x in enumerate(spec["explorations"])]
+                trace.log("check", "exploration_claims", "flagged", explorations=flagged,
+                          note="the exploration's own expect claim is false at its preset; marked on the page, no extra API call")
+            elif any(x.get("expect") for x in spec.get("explorations", [])):
+                trace.log("check", "exploration_claims", "pass")
             page = build_page(spec, case, mode)
             bad = static_page_checks(page, key)
             trace.log("check", "static_page_checks", "pass" if not bad else "fail", failures=bad)

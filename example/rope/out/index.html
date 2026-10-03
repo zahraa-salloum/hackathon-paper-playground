@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>RoPE: 2-D Rotary Position Embedding</title>
 <style>
 /* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
 :root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
@@ -112,10 +112,10 @@ a{color:var(--acc)}
 <section id="ground"><h2><span class="n">5</span>Source grounding</h2>
   <p id="paper"></p>
   <div class="two">
-    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="src"><h3>Supported by the paper excerpt</h3><ul id="supp"></ul></div>
     <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
   </div>
-  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. </p>
 </section>
 
 <section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
@@ -123,9 +123,173 @@ a{color:var(--acc)}
 </section>
 </main>
 
-<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script type="application/json" id="spec">{"title": "RoPE: 2-D Rotary Position Embedding", "paper": {"title": "RoFormer: Enhanced Transformer with Rotary Position Embedding", "authors": "Su, Lu, Pan, Murtadha, Wen, Liu", "year": "2021", "section": "3.2.1 A 2D case"}, "equations": ["fq(xm,m) = (Wq xm) e^{i m θ},  fk(xn,n) = (Wk xn) e^{i n θ}", "g(xm,xn,m−n) = Re[(Wq xm)(Wk xn)* e^{i(m−n)θ}]", "f{q,k}(xm,m) = [[cos mθ, −sin mθ],[sin mθ, cos mθ]] W{q,k} xm"], "idea": "In 2-D, position encoding is a rotation: the query at position m is rotated by angle mθ and the key at position n by nθ. Because a rotation matrix is orthogonal, the dot product of the two rotated vectors depends only on the angle difference (m−n)θ, i.e. on the relative offset m−n. Shifting both positions by the same amount rotates both vectors equally and leaves the dot product unchanged.", "why": "This gives attention a built-in relative-position signal without adding any position term to the embeddings, and the rotation preserves vector norms so scores stay stable.", "symbols": [{"sym": "x_m, x_n", "meaning": "2-D query and key vectors before rotation"}, {"sym": "m, n", "meaning": "position indices of query and key"}, {"sym": "θ", "meaning": "preset non-zero constant rotation rate (radians per position)"}, {"sym": "R(mθ)", "meaning": "2×2 rotation matrix [[cos mθ, −sin mθ],[sin mθ, cos mθ]]"}, {"sym": "q_m, k_n", "meaning": "rotated (position-encoded) query and key"}, {"sym": "q_m·k_n", "meaning": "dot product of rotated query and key"}], "steps": ["Left panel: the query (chart1) and key (chart2) vectors before rotation, drawn from the origin.", "Right panel: the same vectors after rotating by mθ and nθ; the arc shows the swept angle.", "Read the dot product of the rotated vectors below; change m and n by the same amount and watch it stay fixed."], "controls": [{"id": "q", "label": "query x_m (2-D)", "type": "matrix", "default": [[1, 0]], "min": -3, "max": 3, "step": 0.1, "rowLabels": ["x_m"], "colLabels": ["x1", "x2"], "help": "2-D query vector before rotation."}, {"id": "k", "label": "key x_n (2-D)", "type": "matrix", "default": [[0, 1]], "min": -3, "max": 3, "step": 0.1, "rowLabels": ["x_n"], "colLabels": ["k1", "k2"], "help": "2-D key vector before rotation."}, {"id": "theta", "label": "θ (rad per position)", "type": "range", "min": 0.05, "max": 1.5, "step": 0.05, "default": 0.5, "help": "Rotation rate; angle = position × θ."}, {"id": "m", "label": "position m", "type": "range", "min": 0, "max": 12, "step": 1, "default": 2, "help": "Query position index."}, {"id": "n", "label": "position n", "type": "range", "min": 0, "max": 12, "step": 1, "default": 5, "help": "Key position index."}, {"id": "shift", "label": "shift both by Δ", "type": "range", "min": 0, "max": 6, "step": 1, "default": 0, "help": "Adds Δ to both m and n to test shift invariance."}], "explorations": [{"title": "Shift both positions: dot product unchanged", "change": "Set shift to 4 (m and n both move by +4).", "observe": "The two rotated vectors both turn by the same extra angle, and the dot product readout is identical to the unshifted case.", "why": "Rotating both vectors by the same angle 4θ preserves the angle between them, so q_m·k_n depends only on m−n.", "set": {"shift": 4}, "expect": "H.close(s.dotShift, s.dot)"}, {"title": "Relative offset sets the score", "change": "Set m=0, n=6, then compare with m=6, n=12 (same offset m−n=−6).", "observe": "Different absolute positions but the same offset give the same dot product.", "why": "The dot product is Re[(Wq x_m)(Wk x_n)* e^{i(m−n)θ}], a function of m−n only.", "set": {"m": 6, "n": 12, "shift": 0}, "expect": "H.close(s.dot, s.dotOffset)"}], "limitation": "This page shows the d=2 case only. In a real model d is even and the space is split into d/2 two-dimensional sub-spaces, each rotated at its own rate θ_i = 10000^{−2(i−1)/d}; the total score is the sum over sub-spaces, so a single θ here is a simplification. Also, the rotation is applied after the learned projections Wq, Wk, which are omitted here (x_m, x_n are taken as the already-projected vectors).", "invariants": [{"label": "Rotation preserves norms", "test": "H.close(s.nq, s.nq0) && H.close(s.nk, s.nk0)"}, {"label": "Dot product depends only on m−n", "test": "H.close(s.dot, s.dotOffset)"}, {"label": "Shift invariance of the dot product", "test": "H.close(s.dot, s.dotShift)"}], "tests": [{"label": "m=n gives the unrotated dot product", "set": {"m": 3, "n": 3, "shift": 0}, "test": "H.close(s.dot, s.dot0)"}, {"label": "θ=0.05, m=0: no rotation of query", "set": {"m": 0, "n": 5, "theta": 0.05, "shift": 0}, "test": "H.close(s.angQ, 0)"}], "supported": ["A solution to the relative-position formulation in the 2-D case is fq(xm,m)=(Wq xm)e^{imθ}, fk(xn,n)=(Wk xn)e^{inθ} (Eq. 12).", "The inner product can be written g(xm,xn,m−n)=Re[(Wq xm)(Wk xn)* e^{i(m−n)θ}], depending only on m−n (Eq. 12).", "f{q,k} can be written as a multiplication by the rotation matrix [[cos mθ, −sin mθ],[sin mθ, cos mθ]] (Eq. 13).", "RoPE injects position by rotation, which keeps the norm of hidden representations unchanged (Section 3.3)."], "ours": ["We use a single θ and 2-D vectors with no learned Wq, Wk, so x_m and x_n stand in for the projected query and key.", "The default example uses θ=0.5, m=2, n=5 and simple unit vectors to keep the arithmetic easy to follow.", "The 'shift both by Δ' control is our own device for demonstrating shift invariance; the paper states the property but does not expose such a slider."], "compute": "const q = p.q[0], k = p.k[0];\nconst th = p.theta, m = p.m, n = p.n, sh = p.shift;\nconst angQ = m * th, angK = n * th;\nconst angQs = (m + sh) * th, angKs = (n + sh) * th;\nconst rot = (v, a) => [v[0]*Math.cos(a) - v[1]*Math.sin(a), v[0]*Math.sin(a) + v[1]*Math.cos(a)];\nconst qm = rot(q, angQ), kn = rot(k, angK);\nconst qms = rot(q, angQs), kns = rot(k, angKs);\nconst dot = qm[0]*kn[0] + qm[1]*kn[1];\nconst dotShift = qms[0]*kns[0] + qms[1]*kns[1];\nconst dot0 = q[0]*k[0] + q[1]*k[1];\nconst off = m - n;\nconst angOff = off * th;\nconst dotOffset = q[0]*k[0]*Math.cos(angOff) + q[0]*k[1]*Math.sin(angOff) - q[1]*k[0]*Math.sin(angOff) + q[1]*k[1]*Math.cos(angOff);\nconst nq0 = Math.hypot(q[0], q[1]), nk0 = Math.hypot(k[0], k[1]);\nconst nq = Math.hypot(qm[0], qm[1]), nk = Math.hypot(kn[0], kn[1]);\nreturn {\n  show: [\n    {label: \"angle mθ (query)\", value: H.fmt(angQ, 3)},\n    {label: \"angle nθ (key)\", value: H.fmt(angK, 3)},\n    {label: \"rotated query q_m\", value: [qm]},\n    {label: \"rotated key k_n\", value: [kn]},\n    {label: \"dot product q_m·k_n\", value: H.fmt(dot, 4)},\n    {label: \"dot product after shift Δ\", value: H.fmt(dotShift, 4)},\n    {label: \"offset m−n\", value: off}\n  ],\n  q, k, qm, kn, qms, kns, angQ, angK, angQs, angKs, dot, dotShift, dot0, dotOffset, nq, nk, nq0, nk0, angOff, off\n};", "draw": "const W = 720, Hh = 340;\nconst cx = 175, cy = 185, R = 110;\nconst cx2 = 545, cy2 = 185;\nconst sc = R / 3.2;\nconst arrow = (x0, y0, x1, y1, col) => H.line(x0, y0, x1, y1, col, 2.5) + H.circle(x1, y1, 3.5, col);\nconst axes = (ox, oy) => H.line(ox - R - 15, oy, ox + R + 15, oy, H.c.axis, 1) + H.line(ox, oy - R - 15, ox, oy + R + 15, H.c.axis, 1);\nlet g = \"\";\ng += H.text(cx, 28, \"before rotation\", {size: 13, anchor: \"middle\", fill: H.c.ink, weight: \"bold\"});\ng += H.text(cx2, 28, \"after rotation (mθ, nθ)\", {size: 13, anchor: \"middle\", fill: H.c.ink, weight: \"bold\"});\ng += axes(cx, cy) + axes(cx2, cy2);\ng += H.text(cx + R + 12, cy + 4, \"x1\", {size: 11, fill: H.c.mute});\ng += H.text(cx + 4, cy - R - 8, \"x2\", {size: 11, fill: H.c.mute});\nconst qx = cx + s.q[0] * sc, qy = cy - s.q[1] * sc;\nconst kx = cx + s.k[0] * sc, ky = cy - s.k[1] * sc;\ng += arrow(cx, cy, qx, qy, H.c.chart1);\ng += arrow(cx, cy, kx, ky, H.c.chart2);\ng += H.text(qx + 6, qy - 4, \"x_m\", {size: 11, fill: H.c.chart1});\ng += H.text(kx + 6, ky + 12, \"x_n\", {size: 11, fill: H.c.chart2});\nconst qmx = cx2 + s.qm[0] * sc, qmy = cy2 - s.qm[1] * sc;\nconst knx = cx2 + s.kn[0] * sc, kny = cy2 - s.kn[1] * sc;\ng += arrow(cx2, cy2, qmx, qmy, H.c.chart1);\ng += arrow(cx2, cy2, knx, kny, H.c.chart2);\ng += H.text(qmx + 6, qmy - 4, \"q_m\", {size: 11, fill: H.c.chart1});\ng += H.text(knx + 6, kny + 12, \"k_n\", {size: 11, fill: H.c.chart2});\ng += H.text(cx2, 320, \"q_m·k_n = \" + H.fmt(s.dot, 4) + \"   (shifted: \" + H.fmt(s.dotShift, 4) + \")\", {size: 12, anchor: \"middle\", fill: H.c.ink});\ng += H.text(cx, 320, \"m=\" + p.m + \", n=\" + p.n + \", θ=\" + H.fmt(p.theta, 2), {size: 12, anchor: \"middle\", fill: H.c.mute});\nreturn H.svg(W, Hh, g, \"2-D rotary position embedding: query and key before and after rotation\");", "dropped_checks": ["Parallel vectors: dot product equals product of norms"], "source_url": "https://arxiv.org/abs/2104.09864", "audience": "engineering undergraduate"}</script>
 <script>
-__RUNTIME__
+/* Generic drawing/formatting helpers shared by the page and the Python-side checker.
+   Pure JS: no DOM access, so it also runs inside the headless QuickJS checker.
+   Generated spec code calls these as H.*; every helper returns an SVG/HTML string. */
+var H = (function () {
+  function num(x) { x = Number(x); return isFinite(x) ? x : 0; }
+  function fmt(x, d) {
+    if (typeof x !== 'number') return String(x);
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
+    d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
+    var r = Number(x.toFixed(d));
+    if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
+    return String(r);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Theme-aware colours: CSS variables defined per theme in template.html, so charts follow the theme switcher.
+  var C = { ink: 'var(--ink)', mute: 'var(--mute)', chart1: 'var(--chart1)', chart2: 'var(--chart2)', chart3: 'var(--chart3)',
+            good: 'var(--ok)', bad: 'var(--bad)', grid: 'var(--grid)', axis: 'var(--axis)', bg: 'var(--card)' };
+  // sequential colour, t in [0,1]: theme's pale heat colour -> theme's deep heat colour
+  function color(t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return 'color-mix(in srgb, var(--heat) ' + Math.round(t * 100) + '%, var(--heat0))';
+  }
+  function ink(t) { return num(t) > 0.55 ? 'var(--onheat)' : 'var(--ink)'; }
+  function svg(w, h, inner, label) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h +
+      '" width="100%" style="max-width:' + w + 'px;height:auto" role="img" aria-label="' + esc(label || 'visualization') +
+      '" font-family="system-ui,Segoe UI,Arial,sans-serif">' + inner + '</svg>';
+  }
+  function rect(x, y, w, h, fill, extra) {
+    return '<rect x="' + num(x) + '" y="' + num(y) + '" width="' + Math.max(0, num(w)) + '" height="' + Math.max(0, num(h)) +
+      '" fill="' + (fill || 'var(--grid)') + '" ' + (extra || '') + '/>';
+  }
+  function text(x, y, s, o) {
+    o = o || {};
+    if (s === undefined || s === null || (typeof s === 'number' && !isFinite(s))) s = '';
+    return '<text x="' + num(x) + '" y="' + num(y) + '" font-size="' + (o.size || 12) + '" text-anchor="' + (o.anchor || 'start') +
+      '" fill="' + (o.fill || 'var(--ink)') + '"' + (o.weight ? ' font-weight="' + o.weight + '"' : '') +
+      (o.rotate ? ' transform="rotate(' + o.rotate + ' ' + num(x) + ' ' + num(y) + ')"' : '') + '>' + esc(s) + '</text>';
+  }
+  function line(x1, y1, x2, y2, stroke, w, dash) {
+    return '<line x1="' + num(x1) + '" y1="' + num(y1) + '" x2="' + num(x2) + '" y2="' + num(y2) + '" stroke="' + (stroke || 'var(--axis)') +
+      '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  }
+  function circle(x, y, r, fill, extra) {
+    return '<circle cx="' + num(x) + '" cy="' + num(y) + '" r="' + num(r) + '" fill="' + (fill || 'var(--chart2)') + '" ' + (extra || '') + '/>';
+  }
+  // Matrix as coloured cells with numbers. o: x,y,cw,ch,d,max,min,rows,cols,title,signed
+  function heat(M, o) {
+    o = o || {};
+    var x0 = o.x || 0, y0 = o.y || 0, cw = o.cw || 54, ch = o.ch || 34, d = o.d == null ? 2 : o.d;
+    var flat = [].concat.apply([], M), mx = o.max != null ? o.max : Math.max.apply(null, flat.map(Math.abs).concat([1e-9]));
+    var mn = o.min != null ? o.min : 0;
+    var out = '';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (!Array.isArray(o.cols)) o.cols = null;
+    if (o.title) out += text(x0, y0 - 8 - (o.cols ? 14 : 0), o.title, { weight: 'bold', size: 13 });
+    for (var i = 0; i < M.length; i++) {
+      if (o.rows && o.rows[i] != null) out += text(x0 - 6, y0 + i * ch + ch / 2 + 4, o.rows[i], { anchor: 'end', size: 11 });
+      for (var j = 0; j < M[i].length; j++) {
+        var v = num(M[i][j]), t = mx > mn ? (Math.abs(v) - mn) / (mx - mn) : 0;
+        out += rect(x0 + j * cw, y0 + i * ch, cw - 2, ch - 2, color(t), 'rx="3"') +
+          text(x0 + j * cw + (cw - 2) / 2, y0 + i * ch + ch / 2 + 4, fmt(v, d), { anchor: 'middle', size: 12, fill: ink(t) });
+      }
+    }
+    if (o.cols) for (var k = 0; k < (M[0] || []).length && k < o.cols.length; k++) out += text(x0 + k * cw + cw / 2, y0 - 6, o.cols[k], { anchor: 'middle', size: 11 });
+    return out;
+  }
+  // Vertical bars. o: x,y,w,h,labels,max,d,fill,fills,title,ylabel
+  function bars(vals, o) {
+    o = o || {};
+    var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
+    if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    for (var t = 0; t <= 4; t++) {
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
+      if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
+    }
+    for (var i = 0; i < n; i++) {
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
+    }
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // Line plot. series:[{xs,ys,color,label,dash}] o: x,y,w,h,xmin,xmax,ymin,ymax,xlabel,ylabel,title,marks:[{x,y,label}]
+  function plot(series, o) {
+    o = o || {};
+    var x0 = o.x || 46, y0 = o.y || 14, w = o.w || 320, h = o.h || 200, all = [];
+    series.forEach(function (s) { s.xs.forEach(function (_, i) { all.push([num(s.xs[i]), num(s.ys[i])]); }); });
+    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, all.map(function (p) { return p[0]; }));
+    var xmax = o.xmax != null ? o.xmax : Math.max.apply(null, all.map(function (p) { return p[0]; }));
+    var ymin = o.ymin != null ? o.ymin : Math.min.apply(null, all.map(function (p) { return p[1]; }));
+    var ymax = o.ymax != null ? o.ymax : Math.max.apply(null, all.map(function (p) { return p[1]; }));
+    if (xmax === xmin) xmax = xmin + 1;
+    if (ymax === ymin) ymax = ymin + 1;
+    function X(v) { return x0 + (num(v) - xmin) / (xmax - xmin) * w; }
+    function Y(v) { return y0 + h - (num(v) - ymin) / (ymax - ymin) * h; }
+    var out = '';
+    if (o.title) out += text(x0, y0 - 4, o.title, { weight: 'bold', size: 13 });
+    for (var t = 0; t <= 4; t++) {
+      var gx = x0 + w * t / 4, gy = y0 + h - h * t / 4;
+      out += line(gx, y0, gx, y0 + h, 'var(--grid)') + line(x0, gy, x0 + w, gy, 'var(--grid)') +
+        text(gx, y0 + h + 15, fmt(xmin + (xmax - xmin) * t / 4, 2), { anchor: 'middle', size: 10 }) +
+        text(x0 - 6, gy + 4, fmt(ymin + (ymax - ymin) * t / 4, 2), { anchor: 'end', size: 10 });
+    }
+    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    series.forEach(function (s, k) {
+      var pts = s.xs.map(function (_, i) { return X(s.xs[i]).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1); }).join(' ');
+      out += '<polyline points="' + pts + '" fill="none" stroke="' + (s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3]) +
+        '" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+      if (s.label) out += text(x0 + w - 4, y0 + 14 + 14 * k, s.label, { anchor: 'end', size: 11, fill: s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3] });
+    });
+    (o.marks || []).forEach(function (m) {
+      out += circle(X(m.x), Y(m.y), 5, m.color || 'var(--chart2)') +
+        (m.label ? text(X(m.x) + 8, Y(m.y) - 8, m.label, { size: 11 }) : '');
+    });
+    if (o.xlabel) out += text(x0 + w / 2, y0 + h + 32, o.xlabel, { anchor: 'middle', size: 11 });
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // HTML table of a matrix. o: rows, cols, d
+  function table(M, o) {
+    o = o || {};
+    if (!Array.isArray(M[0])) M = [M];
+    var d = o.d == null ? 3 : o.d, s = '<table class="mat">';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (Array.isArray(o.cols)) s += '<tr><th></th>' + o.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    M.forEach(function (r, i) {
+      s += '<tr>' + (o.rows && o.rows[i] != null ? '<th>' + esc(o.rows[i]) + '</th>' : (o.rows ? '<th></th>' : '')) +
+        r.map(function (v) { return '<td>' + fmt(v, d) + '</td>'; }).join('') + '</tr>';
+    });
+    return s + '</table>';
+  }
+  // ---- small numeric helpers (for compute code and invariant tests) ----
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  // numbers, or arrays/matrices of any depth compared element by element (same shape required)
+  function close(a, b, tol) {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!close(a[i], b[i], tol)) return false;
+      return true;
+    }
+    return Math.abs(a - b) <= (tol == null ? 1e-9 : tol) * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+  function rowSums(M) { return M.map(sum); }
+  function transpose(M) { return M[0].map(function (_, j) { return M.map(function (r) { return r[j]; }); }); }
+  function matmul(A, B) {
+    return A.map(function (r) { return B[0].map(function (_, j) { var t = 0; for (var k = 0; k < r.length; k++) t += r[k] * B[k][j]; return t; }); });
+  }
+  return { c: C, sum: sum, close: close, rowSums: rowSums, transpose: transpose, matmul: matmul, num: num, fmt: fmt, esc: esc, color: color, ink: ink, svg: svg, rect: rect, text: text, line: line, circle: circle, heat: heat, bars: bars, plot: plot, table: table };
+})();
+
 </script>
 <script>
 (function () {

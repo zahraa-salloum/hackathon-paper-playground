@@ -5,6 +5,8 @@
 # generated outputs (graders generate their own; the showcase pair lives in example/out/)
 out/
 out_*/
+# ...but keep the showcase examples
+!example/*/out/
 tests/o_*/
 tests/tmp_out/
 tests/*.png

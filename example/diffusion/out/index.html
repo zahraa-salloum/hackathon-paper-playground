@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>Forward diffusion: closed-form q(x_t | x_0)</title>
 <style>
 /* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
 :root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
@@ -112,10 +112,10 @@ a{color:var(--acc)}
 <section id="ground"><h2><span class="n">5</span>Source grounding</h2>
   <p id="paper"></p>
   <div class="two">
-    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="src"><h3>Supported by the paper excerpt</h3><ul id="supp"></ul></div>
     <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
   </div>
-  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. </p>
 </section>
 
 <section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
@@ -123,9 +123,173 @@ a{color:var(--acc)}
 </section>
 </main>
 
-<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script type="application/json" id="spec">{"title": "Forward diffusion: closed-form q(x_t | x_0)", "paper": {"title": "Denoising Diffusion Probabilistic Models", "authors": "Jonathan Ho, Ajay Jain, Pieter Abbeel", "year": "2020", "section": "Section 2, Eq. 4"}, "equations": ["q(x_t | x_0) = N(x_t; sqrt(alpha_bar_t) x_0, (1 - alpha_bar_t) I)", "alpha_t = 1 - beta_t,  alpha_bar_t = prod_{s=1}^{t} alpha_s", "x_t = sqrt(alpha_bar_t) x_0 + sqrt(1 - alpha_bar_t) eps,  eps ~ N(0, I)"], "idea": "The forward process adds Gaussian noise to the data in T small steps, each step shrinking the signal by sqrt(1-beta_t) so the variance stays bounded. Because every step is Gaussian and linear, the composition of t steps collapses to a single Gaussian: q(x_t|x_0) is normal with mean sqrt(alpha_bar_t) x_0 and variance 1-alpha_bar_t. So you can jump straight to any timestep t in one shot, without simulating the chain. alpha_bar_t is the cumulative signal-retention factor: it starts near 1 (almost pure data) and decays toward 0 (almost pure noise).", "why": "This closed form is what makes training tractable: you can sample a noisy x_t for any t with one Gaussian draw, giving the simple noise-prediction objective used to train the reverse process.", "symbols": [{"sym": "beta_t", "meaning": "noise variance added at step t (the schedule)"}, {"sym": "alpha_t", "meaning": "signal-retention factor at step t, 1 - beta_t"}, {"sym": "alpha_bar_t", "meaning": "cumulative product of alpha_s for s=1..t"}, {"sym": "x_0", "meaning": "clean 1-D data sample"}, {"sym": "x_t", "meaning": "noisy sample at timestep t"}, {"sym": "eps", "meaning": "standard Gaussian noise ~ N(0, I)"}, {"sym": "T", "meaning": "total number of diffusion steps"}], "steps": ["Read the top curve: alpha_bar_t falls monotonically from near 1 at t=0 toward 0 at t=T.", "Read the middle curves: signal scale sqrt(alpha_bar_t) shrinks while noise scale sqrt(1-alpha_bar_t) grows; their squares always sum to 1.", "Read the bottom strip: the same x_0 with a fresh noise draw at the chosen t, showing how much signal survives."], "controls": [{"id": "betaStart", "label": "beta start", "type": "range", "min": 0.0001, "max": 0.05, "step": 0.0001, "default": 0.0001, "help": "beta_1, the noise variance at the first step"}, {"id": "betaEnd", "label": "beta end", "type": "range", "min": 0.001, "max": 0.2, "step": 0.001, "default": 0.02, "help": "beta_T, the noise variance at the last step"}, {"id": "T", "label": "steps T", "type": "range", "min": 10, "max": 1000, "step": 10, "default": 200, "help": "total number of diffusion steps"}, {"id": "t", "label": "timestep t", "type": "range", "min": 1, "max": 200, "step": 1, "default": 100, "help": "timestep at which to evaluate q(x_t|x_0)"}, {"id": "x0", "label": "x_0", "type": "range", "min": -3, "max": 3, "step": 0.1, "default": 1.5, "help": "the clean 1-D signal value"}, {"id": "eps", "label": "noise draw eps", "type": "range", "min": -3, "max": 3, "step": 0.1, "default": 0.7, "help": "a single standard-normal noise sample"}], "explorations": [{"title": "Early step: signal dominates", "change": "Set t to a small value (e.g. t=10) with the default schedule.", "observe": "alpha_bar_t is close to 1, the signal scale sqrt(alpha_bar_t) is near 1 and the noise scale sqrt(1-alpha_bar_t) is small; x_t sits close to x_0.", "why": "At t=10 with beta_1=0.0001 and beta_T=0.02, alpha_bar_10 is still very close to 1, so almost no signal has been destroyed.", "set": {"t": 10}, "expect": "s.alphaBar > 0.9"}, {"title": "Late step: noise dominates", "change": "Set t to T (the last step).", "observe": "alpha_bar_t has decayed toward 0, the signal scale is small and the noise scale is near 1; x_t is dominated by the noise draw.", "why": "By t=T the cumulative product of the alphas has shrunk enough that the signal share alpha_bar_T is small and the noise share 1-alpha_bar_T is near 1.", "set": {"t": 200}, "expect": "s.alphaBar < 0.5"}], "limitation": "The closed form assumes a fixed, pre-chosen schedule beta_t and that all steps are independent Gaussian perturbations; it says nothing about how to choose the schedule or how the reverse process is learned. A common misunderstanding is that alpha_bar_t is a single-step factor: it is the product over all steps up to t, so it decays much faster than any individual alpha_t.", "invariants": [{"label": "alpha_bar_t is monotonically non-increasing in t", "test": "s.alphaBarSeq.every((v,i,a)=>i===0||v<=a[i-1]+1e-9)"}, {"label": "signal share + noise share = 1", "test": "H.close(s.alphaBar + s.noiseShare, 1)"}, {"label": "alpha_bar_t lies in (0,1]", "test": "s.alphaBar > 0 && s.alphaBar <= 1 + 1e-9"}, {"label": "x_t matches the closed form", "test": "H.close(s.xt, s.signalScale*p.x0 + s.noiseScale*p.eps)"}], "tests": [{"label": "t=1 gives alpha_bar_1 = alpha_1", "set": {"t": 1}, "test": "H.close(s.alphaBar, 1 - s.betaAt(1))"}, {"label": "t=T gives alpha_bar_T = product of all alphas", "set": {"t": 200}, "test": "H.close(s.alphaBar, s.alphaBarSeq[s.alphaBarSeq.length-1])"}, {"label": "zero noise draw leaves only scaled signal", "set": {"eps": 0}, "test": "H.close(s.xt, s.signalScale*p.x0)"}], "supported": ["The forward process scales down the data with each step by a sqrt(1-beta_t) factor so variance does not grow when adding noise (Appendix B, point 2).", "The forward process destroys signal so that q(x_T|x_0) is close to N(0,I) (Appendix B, point 3).", "beta_t are very small, which ensures the forward process is reversible by a Markov chain with conditional Gaussians (Appendix B, point 3).", "q(x_t|x_0) = N(sqrt(alpha_bar_t) x_0, (1-alpha_bar_t) I) with alpha_t = 1-beta_t and alpha_bar_t = prod alpha_s (Section 2, Eq. 4)."], "ours": ["We use a single scalar x_0 and a single scalar noise draw eps to make the mechanism visible in 1-D.", "We use a linear beta schedule from betaStart to betaEnd; the paper's experiments use a specific linear schedule from 1e-4 to 0.02 over T=1000.", "The default T=200 and the slider ranges are chosen for a fast, readable page, not to reproduce the paper's training setup.", "The bottom strip shows one noise draw, not a distribution; the curves above show the full variance split."], "compute": "const T = Math.max(1, Math.round(p.T));\nconst t = Math.min(T, Math.max(1, Math.round(p.t)));\nconst betaStart = p.betaStart, betaEnd = p.betaEnd;\nconst betaAt = (i) => betaStart + (betaEnd - betaStart) * (i - 1) / Math.max(1, T - 1);\nconst alphaBarSeq = [];\nlet ab = 1;\nfor (let i = 1; i <= T; i++) { ab *= (1 - betaAt(i)); alphaBarSeq.push(ab); }\nconst alphaBar = alphaBarSeq[t - 1];\nconst signalScale = Math.sqrt(alphaBar);\nconst noiseScale = Math.sqrt(Math.max(0, 1 - alphaBar));\nconst noiseShare = 1 - alphaBar;\nconst xt = signalScale * p.x0 + noiseScale * p.eps;\nconst signalCurve = alphaBarSeq.map(v => Math.sqrt(v));\nconst noiseCurve = alphaBarSeq.map(v => Math.sqrt(Math.max(0, 1 - v)));\nreturn {\n  show: [\n    { label: 'alpha_bar_t', value: alphaBar },\n    { label: 'signal scale sqrt(alpha_bar_t)', value: signalScale },\n    { label: 'noise scale sqrt(1-alpha_bar_t)', value: noiseScale },\n    { label: 'signal share alpha_bar_t', value: alphaBar },\n    { label: 'noise share 1-alpha_bar_t', value: noiseShare },\n    { label: 'x_t', value: xt }\n  ],\n  alphaBar, signalScale, noiseScale, noiseShare, xt,\n  alphaBarSeq, signalCurve, noiseCurve, T, t, betaAt\n};", "draw": "const T = s.T, t = s.t;\nconst w = 640, h = 560;\nconst parts = [];\n// top plot: alpha_bar_t\nconst px = 70, py = 60, pw = 520, ph = 150;\nconst xs = s.alphaBarSeq.map((_, i) => i + 1);\nparts.push(H.plot([\n  { xs, ys: s.alphaBarSeq, color: H.c.chart1, label: 'alpha_bar_t' }\n], { x: px, y: py, w: pw, h: ph, xmin: 1, xmax: T, ymin: 0, ymax: 1,\n  xlabel: 'timestep t', ylabel: 'alpha_bar_t', title: 'Cumulative signal retention',\n  marks: [{ x: t, y: s.alphaBar, label: 't=' + t }] }));\n// middle plot: signal and noise scales\nconst my = py + ph + 70;\nparts.push(H.plot([\n  { xs, ys: s.signalCurve, color: H.c.chart2, label: 'sqrt(alpha_bar_t)' },\n  { xs, ys: s.noiseCurve, color: H.c.chart3, label: 'sqrt(1-alpha_bar_t)' }\n], { x: px, y: my, w: pw, h: ph, xmin: 1, xmax: T, ymin: 0, ymax: 1,\n  xlabel: 'timestep t', ylabel: 'scale', title: 'Signal vs noise scale',\n  marks: [{ x: t, y: s.signalScale, label: 'signal' }, { x: t, y: s.noiseScale, label: 'noise' }] }));\n// bottom: x_t strip\nconst by = my + ph + 70;\nparts.push(H.text(px, by - 8, 'x_t at t=' + t + '  (x_0=' + H.fmt(p.x0, 2) + ', eps=' + H.fmt(p.eps, 2) + ')', { size: 12, fill: H.c.ink, weight: 'bold' }));\nconst axisY = by + 40, axisX0 = px, axisX1 = px + pw;\nparts.push(H.line(axisX0, axisY, axisX1, axisY, H.c.axis, 1.5));\nconst mapX = (v) => axisX0 + (v + 4) / 8 * (axisX1 - axisX0);\nparts.push(H.circle(mapX(p.x0), axisY, 5, H.c.chart2));\nparts.push(H.text(mapX(p.x0), axisY - 12, 'x_0', { size: 11, anchor: 'middle', fill: H.c.chart2 }));\nparts.push(H.circle(mapX(s.xt), axisY, 5, H.c.chart1));\nparts.push(H.text(mapX(s.xt), axisY + 20, 'x_t', { size: 11, anchor: 'middle', fill: H.c.chart1 }));\nparts.push(H.text(axisX0, axisY + 40, 'signal share ' + H.fmt(s.alphaBar, 3) + '   noise share ' + H.fmt(s.noiseShare, 3), { size: 11, fill: H.c.mute }));\nreturn H.svg(w, h, parts.join(''), 'Forward diffusion closed form');", "source_url": "https://arxiv.org/abs/2006.11239", "audience": "engineering undergraduate"}</script>
 <script>
-__RUNTIME__
+/* Generic drawing/formatting helpers shared by the page and the Python-side checker.
+   Pure JS: no DOM access, so it also runs inside the headless QuickJS checker.
+   Generated spec code calls these as H.*; every helper returns an SVG/HTML string. */
+var H = (function () {
+  function num(x) { x = Number(x); return isFinite(x) ? x : 0; }
+  function fmt(x, d) {
+    if (typeof x !== 'number') return String(x);
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
+    d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
+    var r = Number(x.toFixed(d));
+    if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
+    return String(r);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Theme-aware colours: CSS variables defined per theme in template.html, so charts follow the theme switcher.
+  var C = { ink: 'var(--ink)', mute: 'var(--mute)', chart1: 'var(--chart1)', chart2: 'var(--chart2)', chart3: 'var(--chart3)',
+            good: 'var(--ok)', bad: 'var(--bad)', grid: 'var(--grid)', axis: 'var(--axis)', bg: 'var(--card)' };
+  // sequential colour, t in [0,1]: theme's pale heat colour -> theme's deep heat colour
+  function color(t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return 'color-mix(in srgb, var(--heat) ' + Math.round(t * 100) + '%, var(--heat0))';
+  }
+  function ink(t) { return num(t) > 0.55 ? 'var(--onheat)' : 'var(--ink)'; }
+  function svg(w, h, inner, label) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h +
+      '" width="100%" style="max-width:' + w + 'px;height:auto" role="img" aria-label="' + esc(label || 'visualization') +
+      '" font-family="system-ui,Segoe UI,Arial,sans-serif">' + inner + '</svg>';
+  }
+  function rect(x, y, w, h, fill, extra) {
+    return '<rect x="' + num(x) + '" y="' + num(y) + '" width="' + Math.max(0, num(w)) + '" height="' + Math.max(0, num(h)) +
+      '" fill="' + (fill || 'var(--grid)') + '" ' + (extra || '') + '/>';
+  }
+  function text(x, y, s, o) {
+    o = o || {};
+    if (s === undefined || s === null || (typeof s === 'number' && !isFinite(s))) s = '';
+    return '<text x="' + num(x) + '" y="' + num(y) + '" font-size="' + (o.size || 12) + '" text-anchor="' + (o.anchor || 'start') +
+      '" fill="' + (o.fill || 'var(--ink)') + '"' + (o.weight ? ' font-weight="' + o.weight + '"' : '') +
+      (o.rotate ? ' transform="rotate(' + o.rotate + ' ' + num(x) + ' ' + num(y) + ')"' : '') + '>' + esc(s) + '</text>';
+  }
+  function line(x1, y1, x2, y2, stroke, w, dash) {
+    return '<line x1="' + num(x1) + '" y1="' + num(y1) + '" x2="' + num(x2) + '" y2="' + num(y2) + '" stroke="' + (stroke || 'var(--axis)') +
+      '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  }
+  function circle(x, y, r, fill, extra) {
+    return '<circle cx="' + num(x) + '" cy="' + num(y) + '" r="' + num(r) + '" fill="' + (fill || 'var(--chart2)') + '" ' + (extra || '') + '/>';
+  }
+  // Matrix as coloured cells with numbers. o: x,y,cw,ch,d,max,min,rows,cols,title,signed
+  function heat(M, o) {
+    o = o || {};
+    var x0 = o.x || 0, y0 = o.y || 0, cw = o.cw || 54, ch = o.ch || 34, d = o.d == null ? 2 : o.d;
+    var flat = [].concat.apply([], M), mx = o.max != null ? o.max : Math.max.apply(null, flat.map(Math.abs).concat([1e-9]));
+    var mn = o.min != null ? o.min : 0;
+    var out = '';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (!Array.isArray(o.cols)) o.cols = null;
+    if (o.title) out += text(x0, y0 - 8 - (o.cols ? 14 : 0), o.title, { weight: 'bold', size: 13 });
+    for (var i = 0; i < M.length; i++) {
+      if (o.rows && o.rows[i] != null) out += text(x0 - 6, y0 + i * ch + ch / 2 + 4, o.rows[i], { anchor: 'end', size: 11 });
+      for (var j = 0; j < M[i].length; j++) {
+        var v = num(M[i][j]), t = mx > mn ? (Math.abs(v) - mn) / (mx - mn) : 0;
+        out += rect(x0 + j * cw, y0 + i * ch, cw - 2, ch - 2, color(t), 'rx="3"') +
+          text(x0 + j * cw + (cw - 2) / 2, y0 + i * ch + ch / 2 + 4, fmt(v, d), { anchor: 'middle', size: 12, fill: ink(t) });
+      }
+    }
+    if (o.cols) for (var k = 0; k < (M[0] || []).length && k < o.cols.length; k++) out += text(x0 + k * cw + cw / 2, y0 - 6, o.cols[k], { anchor: 'middle', size: 11 });
+    return out;
+  }
+  // Vertical bars. o: x,y,w,h,labels,max,d,fill,fills,title,ylabel
+  function bars(vals, o) {
+    o = o || {};
+    var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
+    if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    for (var t = 0; t <= 4; t++) {
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
+      if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
+    }
+    for (var i = 0; i < n; i++) {
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
+    }
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // Line plot. series:[{xs,ys,color,label,dash}] o: x,y,w,h,xmin,xmax,ymin,ymax,xlabel,ylabel,title,marks:[{x,y,label}]
+  function plot(series, o) {
+    o = o || {};
+    var x0 = o.x || 46, y0 = o.y || 14, w = o.w || 320, h = o.h || 200, all = [];
+    series.forEach(function (s) { s.xs.forEach(function (_, i) { all.push([num(s.xs[i]), num(s.ys[i])]); }); });
+    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, all.map(function (p) { return p[0]; }));
+    var xmax = o.xmax != null ? o.xmax : Math.max.apply(null, all.map(function (p) { return p[0]; }));
+    var ymin = o.ymin != null ? o.ymin : Math.min.apply(null, all.map(function (p) { return p[1]; }));
+    var ymax = o.ymax != null ? o.ymax : Math.max.apply(null, all.map(function (p) { return p[1]; }));
+    if (xmax === xmin) xmax = xmin + 1;
+    if (ymax === ymin) ymax = ymin + 1;
+    function X(v) { return x0 + (num(v) - xmin) / (xmax - xmin) * w; }
+    function Y(v) { return y0 + h - (num(v) - ymin) / (ymax - ymin) * h; }
+    var out = '';
+    if (o.title) out += text(x0, y0 - 4, o.title, { weight: 'bold', size: 13 });
+    for (var t = 0; t <= 4; t++) {
+      var gx = x0 + w * t / 4, gy = y0 + h - h * t / 4;
+      out += line(gx, y0, gx, y0 + h, 'var(--grid)') + line(x0, gy, x0 + w, gy, 'var(--grid)') +
+        text(gx, y0 + h + 15, fmt(xmin + (xmax - xmin) * t / 4, 2), { anchor: 'middle', size: 10 }) +
+        text(x0 - 6, gy + 4, fmt(ymin + (ymax - ymin) * t / 4, 2), { anchor: 'end', size: 10 });
+    }
+    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    series.forEach(function (s, k) {
+      var pts = s.xs.map(function (_, i) { return X(s.xs[i]).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1); }).join(' ');
+      out += '<polyline points="' + pts + '" fill="none" stroke="' + (s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3]) +
+        '" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+      if (s.label) out += text(x0 + w - 4, y0 + 14 + 14 * k, s.label, { anchor: 'end', size: 11, fill: s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3] });
+    });
+    (o.marks || []).forEach(function (m) {
+      out += circle(X(m.x), Y(m.y), 5, m.color || 'var(--chart2)') +
+        (m.label ? text(X(m.x) + 8, Y(m.y) - 8, m.label, { size: 11 }) : '');
+    });
+    if (o.xlabel) out += text(x0 + w / 2, y0 + h + 32, o.xlabel, { anchor: 'middle', size: 11 });
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // HTML table of a matrix. o: rows, cols, d
+  function table(M, o) {
+    o = o || {};
+    if (!Array.isArray(M[0])) M = [M];
+    var d = o.d == null ? 3 : o.d, s = '<table class="mat">';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (Array.isArray(o.cols)) s += '<tr><th></th>' + o.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    M.forEach(function (r, i) {
+      s += '<tr>' + (o.rows && o.rows[i] != null ? '<th>' + esc(o.rows[i]) + '</th>' : (o.rows ? '<th></th>' : '')) +
+        r.map(function (v) { return '<td>' + fmt(v, d) + '</td>'; }).join('') + '</tr>';
+    });
+    return s + '</table>';
+  }
+  // ---- small numeric helpers (for compute code and invariant tests) ----
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  // numbers, or arrays/matrices of any depth compared element by element (same shape required)
+  function close(a, b, tol) {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!close(a[i], b[i], tol)) return false;
+      return true;
+    }
+    return Math.abs(a - b) <= (tol == null ? 1e-9 : tol) * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+  function rowSums(M) { return M.map(sum); }
+  function transpose(M) { return M[0].map(function (_, j) { return M.map(function (r) { return r[j]; }); }); }
+  function matmul(A, B) {
+    return A.map(function (r) { return B[0].map(function (_, j) { var t = 0; for (var k = 0; k < r.length; k++) t += r[k] * B[k][j]; return t; }); });
+  }
+  return { c: C, sum: sum, close: close, rowSums: rowSums, transpose: transpose, matmul: matmul, num: num, fmt: fmt, esc: esc, color: color, ink: ink, svg: svg, rect: rect, text: text, line: line, circle: circle, heat: heat, bars: bars, plot: plot, table: table };
+})();
+
 </script>
 <script>
 (function () {

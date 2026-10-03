@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>Adam: bias-corrected moment estimates</title>
 <style>
 /* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
 :root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
@@ -112,10 +112,10 @@ a{color:var(--acc)}
 <section id="ground"><h2><span class="n">5</span>Source grounding</h2>
   <p id="paper"></p>
   <div class="two">
-    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="src"><h3>Supported by the paper excerpt</h3><ul id="supp"></ul></div>
     <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
   </div>
-  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. </p>
 </section>
 
 <section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
@@ -123,9 +123,173 @@ a{color:var(--acc)}
 </section>
 </main>
 
-<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script type="application/json" id="spec">{"title": "Adam: bias-corrected moment estimates", "paper": {"title": "Adam: A Method for Stochastic Optimization", "authors": "Diederik P. Kingma, Jimmy Ba", "year": "2015", "section": "Algorithm 1 and Section 2 (with Section 3 derivation)"}, "equations": ["m_t = β1·m_{t-1} + (1-β1)·g_t", "v_t = β2·v_{t-1} + (1-β2)·g_t^2", "m̂_t = m_t/(1-β1^t),  v̂_t = v_t/(1-β2^t)", "Δ_t = α·m̂_t/√v̂_t"], "idea": "Adam keeps two exponential moving averages of the gradient: m_t estimates the mean and v_t the uncentered second moment. Both start at zero, so early on they are biased toward zero by factors (1-β1^t) and (1-β2^t). Dividing by those factors gives the bias-corrected estimates m̂_t and v̂_t, and the parameter step is α·m̂_t/√v̂_t.", "why": "Without correction the first steps are far too small (or, for small β2, badly scaled), so the effective step size depends on where you are in the run. Bias correction makes the step size roughly α from the very first iteration.", "symbols": [{"sym": "g_t", "meaning": "stochastic gradient at iteration t"}, {"sym": "m_t", "meaning": "biased first moment estimate (EMA of g)"}, {"sym": "v_t", "meaning": "biased second raw moment estimate (EMA of g^2)"}, {"sym": "m̂_t, v̂_t", "meaning": "bias-corrected moment estimates"}, {"sym": "β1, β2", "meaning": "exponential decay rates for m and v"}, {"sym": "α", "meaning": "step size (learning rate)"}, {"sym": "Δ_t", "meaning": "effective parameter step at iteration t"}], "steps": ["Read the gradient bars: these are the g_t fed to Adam.", "Compare each m_t with its corrected m̂_t (and v_t with v̂_t): the correction factor is largest at t=1.", "Watch the step-size plot: the dashed uncorrected curve starts near zero, the solid corrected curve is close to α immediately.", "Toggle bias correction off to see the uncorrected step used instead."], "controls": [{"id": "g", "label": "gradient sequence g_t", "type": "matrix", "default": [[0.5, -0.3, 0.8, 0.2, -0.6, 0.4]], "min": -2, "max": 2, "step": 0.1, "help": "one row of gradients, one per iteration"}, {"id": "b1", "label": "β1 (first moment decay)", "type": "range", "min": 0, "max": 0.999, "step": 0.001, "default": 0.9, "help": "decay rate for m_t"}, {"id": "b2", "label": "β2 (second moment decay)", "type": "range", "min": 0, "max": 0.9999, "step": 0.0001, "default": 0.999, "help": "decay rate for v_t"}, {"id": "alpha", "label": "α (step size)", "type": "range", "min": 0.001, "max": 0.5, "step": 0.001, "default": 0.01, "help": "learning rate"}, {"id": "correct", "label": "apply bias correction", "type": "toggle", "default": true, "help": "use m̂_t, v̂_t instead of m_t, v_t"}], "explorations": [{"title": "Bias correction matters most at t=1", "change": "Set the gradient sequence to a constant value and keep the default β1, β2.", "observe": "At t=1 the corrected step is much larger than the uncorrected one; by later iterations the two curves nearly coincide.", "why": "The correction factors are 1-β1^t and 1-β2^t, which are smallest at t=1 and approach 1 as t grows.", "set": {"g": [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]], "b1": 0.9, "b2": 0.999, "alpha": 0.01, "correct": true}, "expect": "Math.abs(s.stepCorr[0]) > 3 * Math.abs(s.step[0])"}, {"title": "Small β2 makes the uncorrected first step tiny", "change": "Lower β2 to a small value and look at the first iteration.", "observe": "The uncorrected step at t=1 collapses toward zero while the corrected step stays near α.", "why": "With small β2, v_1 = (1-β2)·g_1^2 is small, so √v_1 is small and the uncorrected ratio m_1/√v_1 is far from 1; dividing by 1-β2^t restores the scale.", "set": {"g": [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]], "b1": 0.9, "b2": 0.1, "alpha": 0.01, "correct": true}, "expect": "Math.abs(s.stepCorr[0]) > 5 * Math.abs(s.step[0])"}], "limitation": "Bias correction fixes the zero-initialization bias only when the gradient distribution is roughly stationary; the paper notes a residual term ζ otherwise. It does not make Adam scale-invariant to α, and it does not remove the need to tune β1, β2.", "invariants": [{"label": "correction factors in (0,1]", "test": "s.c1.every(x => x > 0 && x <= 1 + 1e-9) && s.c2.every(x => x > 0 && x <= 1 + 1e-9)"}, {"label": "corrected = biased / correction", "test": "s.m.every((x,i) => H.close(s.mhat[i], x / s.c1[i], 1e-6)) && s.v.every((x,i) => H.close(s.vhat[i], x / s.c2[i], 1e-6))"}, {"label": "step uses corrected moments when correct=true", "test": "!p.correct || s.used.every((x,i) => H.close(x, s.stepCorr[i], 1e-9))"}, {"label": "step uses biased moments when correct=false", "test": "p.correct || s.used.every((x,i) => H.close(x, s.step[i], 1e-9))"}], "tests": [{"label": "single iteration, β1=β2=0", "set": {"g": [[0.5, 0, 0, 0, 0, 0]], "b1": 0, "b2": 0, "alpha": 0.01, "correct": true}, "test": "H.close(s.mhat[0], 0.5, 1e-9) && H.close(s.vhat[0], 0.25, 1e-9) && H.close(s.stepCorr[0], 0.01, 1e-9)"}, {"label": "zero gradient gives zero step", "set": {"g": [[0, 0, 0, 0, 0, 0]], "b1": 0.9, "b2": 0.999, "alpha": 0.01, "correct": true}, "test": "s.used.every(x => H.close(x, 0, 1e-9))"}], "supported": ["The moving averages m_t and v_t are initialized as zeros, leading to moment estimates biased toward zero, especially during the initial timesteps and especially when the βs are close to 1 (Section 2).", "The bias can be counteracted by dividing by (1-β2^t) for the second moment, giving v̂_t; the derivation for the first moment is completely analogous (Section 3, eq. 4).", "The effective step is Δ_t = α·m̂_t/√v̂_t, and its magnitude is approximately bounded by α (Section 2.1).", "The effective step is invariant to the scale of the gradients: rescaling g by c scales m̂ by c and v̂ by c^2, which cancel (Section 2.1)."], "ours": ["We use a one-dimensional gradient sequence of six values so the moments can be read off by hand.", "The step-size plot compares the corrected and uncorrected steps for the same gradient sequence.", "The default β1=0.9, β2=0.999, α=0.01 are the paper's suggested defaults, used here as a toy example."], "compute": "const g = p.g[0].slice();\nconst T = g.length;\nconst b1 = p.b1, b2 = p.b2, a = p.alpha;\nconst m = [], v = [], mhat = [], vhat = [], c1 = [], c2 = [], step = [], stepCorr = [];\nlet mt = 0, vt = 0;\nfor (let i = 0; i < T; i++) {\n  const t = i + 1;\n  mt = b1 * mt + (1 - b1) * g[i];\n  vt = b2 * vt + (1 - b2) * g[i] * g[i];\n  const k1 = 1 - Math.pow(b1, t);\n  const k2 = 1 - Math.pow(b2, t);\n  const mh = k1 > 0 ? mt / k1 : mt;\n  const vh = k2 > 0 ? vt / k2 : vt;\n  const denom = Math.sqrt(vh);\n  m.push(mt); v.push(vt); mhat.push(mh); vhat.push(vh);\n  c1.push(k1); c2.push(k2);\n  step.push(denom > 0 ? a * mt / denom : 0);\n  stepCorr.push(denom > 0 ? a * mh / denom : 0);\n}\nconst used = p.correct ? stepCorr : step;\nconst show = [\n  {label: 'iterations T', value: T},\n  {label: 'm_T (biased 1st moment)', value: H.fmt(m[T-1], 6)},\n  {label: 'v_T (biased 2nd moment)', value: H.fmt(v[T-1], 6)},\n  {label: 'm̂_T (corrected)', value: H.fmt(mhat[T-1], 6)},\n  {label: 'v̂_T (corrected)', value: H.fmt(vhat[T-1], 6)},\n  {label: 'correction 1-β1^T', value: H.fmt(c1[T-1], 6)},\n  {label: 'correction 1-β2^T', value: H.fmt(c2[T-1], 6)},\n  {label: 'step Δ_1 (used)', value: H.fmt(used[0], 6)},\n  {label: 'step Δ_T (used)', value: H.fmt(used[T-1], 6)},\n  {label: '|Δ_1| / |Δ_T|', value: Math.abs(used[T-1]) > 1e-12 ? H.fmt(Math.abs(used[0]) / Math.abs(used[T-1]), 4) : 'n/a'}\n];\nreturn {show, g, m, v, mhat, vhat, c1, c2, step, stepCorr, used, T};", "draw": "const T = s.T;\nconst W = 720, Hh = 560;\nconst parts = [];\nconst ink = H.c.ink, mute = H.c.mute;\n\n// --- gradient bars ---\nparts.push(H.bars(s.g, {x: 60, y: 60, w: 600, h: 90, labels: s.g.map((_, i) => 't=' + (i + 1)), max: Math.max(0.1, ...s.g.map(Math.abs)), d: 2, title: 'gradient sequence g_t', ylabel: 'g_t'}));\n\n// --- moment heat blocks ---\nconst rows = ['t=1', 't=2', 't=3', 't=4', 't=5', 't=6'].slice(0, T);\nconst cols = ['value'];\nconst maxM = Math.max(1e-9, ...s.m.map(Math.abs), ...s.mhat.map(Math.abs));\nconst maxV = Math.max(1e-9, ...s.v.map(Math.abs), ...s.vhat.map(Math.abs));\nparts.push(H.heat(s.m.map(x => [x]), {x: 60, y: 200, cw: 70, ch: 22, d: 4, max: maxM, rows: rows, cols: cols, title: 'm_t (biased)'}));\nparts.push(H.heat(s.mhat.map(x => [x]), {x: 200, y: 200, cw: 70, ch: 22, d: 4, max: maxM, rows: rows, cols: cols, title: 'm̂_t (corrected)'}));\nparts.push(H.heat(s.v.map(x => [x]), {x: 380, y: 200, cw: 70, ch: 22, d: 4, max: maxV, rows: rows, cols: cols, title: 'v_t (biased)'}));\nparts.push(H.heat(s.vhat.map(x => [x]), {x: 520, y: 200, cw: 70, ch: 22, d: 4, max: maxV, rows: rows, cols: cols, title: 'v̂_t (corrected)'}));\n\n// --- step-size plot ---\nconst xs = s.used.map((_, i) => i + 1);\nconst xsC = s.stepCorr.map((_, i) => i + 1);\nconst xsU = s.step.map((_, i) => i + 1);\nconst allY = s.step.concat(s.stepCorr).concat([p.alpha, -p.alpha]);\nconst ymax = Math.max(1e-6, ...allY.map(Math.abs)) * 1.15;\nparts.push(H.plot([\n  {xs: xsC, ys: s.stepCorr, color: H.c.chart1, label: 'corrected Δ_t'},\n  {xs: xsU, ys: s.step, color: H.c.chart2, label: 'uncorrected α·m_t/√v_t', dash: '4 3'},\n  {xs: [1, T], ys: [p.alpha, p.alpha], color: H.c.chart3, label: '+α bound', dash: '2 4'},\n  {xs: [1, T], ys: [-p.alpha, -p.alpha], color: H.c.chart3, dash: '2 4'}\n], {x: 60, y: 400, w: 600, h: 130, xmin: 1, xmax: T, ymin: -ymax, ymax: ymax, xlabel: 'iteration t', ylabel: 'step Δ_t', title: 'effective step size per iteration'}));\n\nparts.push(H.text(60, 545, 'used step: ' + (p.correct ? 'bias-corrected Δ_t = α·m̂_t/√v̂_t' : 'uncorrected α·m_t/√v_t'), {size: 12, fill: ink}));\nreturn H.svg(W, Hh, parts.join(''), 'Adam bias-corrected moment estimates');", "dropped_checks": ["uncorrected step at t=1 equals α·g/|g|"], "source_url": "https://arxiv.org/abs/1412.6980", "audience": "engineering undergraduate"}</script>
 <script>
-__RUNTIME__
+/* Generic drawing/formatting helpers shared by the page and the Python-side checker.
+   Pure JS: no DOM access, so it also runs inside the headless QuickJS checker.
+   Generated spec code calls these as H.*; every helper returns an SVG/HTML string. */
+var H = (function () {
+  function num(x) { x = Number(x); return isFinite(x) ? x : 0; }
+  function fmt(x, d) {
+    if (typeof x !== 'number') return String(x);
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
+    d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
+    var r = Number(x.toFixed(d));
+    if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
+    return String(r);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Theme-aware colours: CSS variables defined per theme in template.html, so charts follow the theme switcher.
+  var C = { ink: 'var(--ink)', mute: 'var(--mute)', chart1: 'var(--chart1)', chart2: 'var(--chart2)', chart3: 'var(--chart3)',
+            good: 'var(--ok)', bad: 'var(--bad)', grid: 'var(--grid)', axis: 'var(--axis)', bg: 'var(--card)' };
+  // sequential colour, t in [0,1]: theme's pale heat colour -> theme's deep heat colour
+  function color(t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return 'color-mix(in srgb, var(--heat) ' + Math.round(t * 100) + '%, var(--heat0))';
+  }
+  function ink(t) { return num(t) > 0.55 ? 'var(--onheat)' : 'var(--ink)'; }
+  function svg(w, h, inner, label) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h +
+      '" width="100%" style="max-width:' + w + 'px;height:auto" role="img" aria-label="' + esc(label || 'visualization') +
+      '" font-family="system-ui,Segoe UI,Arial,sans-serif">' + inner + '</svg>';
+  }
+  function rect(x, y, w, h, fill, extra) {
+    return '<rect x="' + num(x) + '" y="' + num(y) + '" width="' + Math.max(0, num(w)) + '" height="' + Math.max(0, num(h)) +
+      '" fill="' + (fill || 'var(--grid)') + '" ' + (extra || '') + '/>';
+  }
+  function text(x, y, s, o) {
+    o = o || {};
+    if (s === undefined || s === null || (typeof s === 'number' && !isFinite(s))) s = '';
+    return '<text x="' + num(x) + '" y="' + num(y) + '" font-size="' + (o.size || 12) + '" text-anchor="' + (o.anchor || 'start') +
+      '" fill="' + (o.fill || 'var(--ink)') + '"' + (o.weight ? ' font-weight="' + o.weight + '"' : '') +
+      (o.rotate ? ' transform="rotate(' + o.rotate + ' ' + num(x) + ' ' + num(y) + ')"' : '') + '>' + esc(s) + '</text>';
+  }
+  function line(x1, y1, x2, y2, stroke, w, dash) {
+    return '<line x1="' + num(x1) + '" y1="' + num(y1) + '" x2="' + num(x2) + '" y2="' + num(y2) + '" stroke="' + (stroke || 'var(--axis)') +
+      '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  }
+  function circle(x, y, r, fill, extra) {
+    return '<circle cx="' + num(x) + '" cy="' + num(y) + '" r="' + num(r) + '" fill="' + (fill || 'var(--chart2)') + '" ' + (extra || '') + '/>';
+  }
+  // Matrix as coloured cells with numbers. o: x,y,cw,ch,d,max,min,rows,cols,title,signed
+  function heat(M, o) {
+    o = o || {};
+    var x0 = o.x || 0, y0 = o.y || 0, cw = o.cw || 54, ch = o.ch || 34, d = o.d == null ? 2 : o.d;
+    var flat = [].concat.apply([], M), mx = o.max != null ? o.max : Math.max.apply(null, flat.map(Math.abs).concat([1e-9]));
+    var mn = o.min != null ? o.min : 0;
+    var out = '';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (!Array.isArray(o.cols)) o.cols = null;
+    if (o.title) out += text(x0, y0 - 8 - (o.cols ? 14 : 0), o.title, { weight: 'bold', size: 13 });
+    for (var i = 0; i < M.length; i++) {
+      if (o.rows && o.rows[i] != null) out += text(x0 - 6, y0 + i * ch + ch / 2 + 4, o.rows[i], { anchor: 'end', size: 11 });
+      for (var j = 0; j < M[i].length; j++) {
+        var v = num(M[i][j]), t = mx > mn ? (Math.abs(v) - mn) / (mx - mn) : 0;
+        out += rect(x0 + j * cw, y0 + i * ch, cw - 2, ch - 2, color(t), 'rx="3"') +
+          text(x0 + j * cw + (cw - 2) / 2, y0 + i * ch + ch / 2 + 4, fmt(v, d), { anchor: 'middle', size: 12, fill: ink(t) });
+      }
+    }
+    if (o.cols) for (var k = 0; k < (M[0] || []).length && k < o.cols.length; k++) out += text(x0 + k * cw + cw / 2, y0 - 6, o.cols[k], { anchor: 'middle', size: 11 });
+    return out;
+  }
+  // Vertical bars. o: x,y,w,h,labels,max,d,fill,fills,title,ylabel
+  function bars(vals, o) {
+    o = o || {};
+    var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
+    if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    for (var t = 0; t <= 4; t++) {
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
+      if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
+    }
+    for (var i = 0; i < n; i++) {
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
+    }
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // Line plot. series:[{xs,ys,color,label,dash}] o: x,y,w,h,xmin,xmax,ymin,ymax,xlabel,ylabel,title,marks:[{x,y,label}]
+  function plot(series, o) {
+    o = o || {};
+    var x0 = o.x || 46, y0 = o.y || 14, w = o.w || 320, h = o.h || 200, all = [];
+    series.forEach(function (s) { s.xs.forEach(function (_, i) { all.push([num(s.xs[i]), num(s.ys[i])]); }); });
+    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, all.map(function (p) { return p[0]; }));
+    var xmax = o.xmax != null ? o.xmax : Math.max.apply(null, all.map(function (p) { return p[0]; }));
+    var ymin = o.ymin != null ? o.ymin : Math.min.apply(null, all.map(function (p) { return p[1]; }));
+    var ymax = o.ymax != null ? o.ymax : Math.max.apply(null, all.map(function (p) { return p[1]; }));
+    if (xmax === xmin) xmax = xmin + 1;
+    if (ymax === ymin) ymax = ymin + 1;
+    function X(v) { return x0 + (num(v) - xmin) / (xmax - xmin) * w; }
+    function Y(v) { return y0 + h - (num(v) - ymin) / (ymax - ymin) * h; }
+    var out = '';
+    if (o.title) out += text(x0, y0 - 4, o.title, { weight: 'bold', size: 13 });
+    for (var t = 0; t <= 4; t++) {
+      var gx = x0 + w * t / 4, gy = y0 + h - h * t / 4;
+      out += line(gx, y0, gx, y0 + h, 'var(--grid)') + line(x0, gy, x0 + w, gy, 'var(--grid)') +
+        text(gx, y0 + h + 15, fmt(xmin + (xmax - xmin) * t / 4, 2), { anchor: 'middle', size: 10 }) +
+        text(x0 - 6, gy + 4, fmt(ymin + (ymax - ymin) * t / 4, 2), { anchor: 'end', size: 10 });
+    }
+    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    series.forEach(function (s, k) {
+      var pts = s.xs.map(function (_, i) { return X(s.xs[i]).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1); }).join(' ');
+      out += '<polyline points="' + pts + '" fill="none" stroke="' + (s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3]) +
+        '" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+      if (s.label) out += text(x0 + w - 4, y0 + 14 + 14 * k, s.label, { anchor: 'end', size: 11, fill: s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3] });
+    });
+    (o.marks || []).forEach(function (m) {
+      out += circle(X(m.x), Y(m.y), 5, m.color || 'var(--chart2)') +
+        (m.label ? text(X(m.x) + 8, Y(m.y) - 8, m.label, { size: 11 }) : '');
+    });
+    if (o.xlabel) out += text(x0 + w / 2, y0 + h + 32, o.xlabel, { anchor: 'middle', size: 11 });
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // HTML table of a matrix. o: rows, cols, d
+  function table(M, o) {
+    o = o || {};
+    if (!Array.isArray(M[0])) M = [M];
+    var d = o.d == null ? 3 : o.d, s = '<table class="mat">';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (Array.isArray(o.cols)) s += '<tr><th></th>' + o.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    M.forEach(function (r, i) {
+      s += '<tr>' + (o.rows && o.rows[i] != null ? '<th>' + esc(o.rows[i]) + '</th>' : (o.rows ? '<th></th>' : '')) +
+        r.map(function (v) { return '<td>' + fmt(v, d) + '</td>'; }).join('') + '</tr>';
+    });
+    return s + '</table>';
+  }
+  // ---- small numeric helpers (for compute code and invariant tests) ----
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  // numbers, or arrays/matrices of any depth compared element by element (same shape required)
+  function close(a, b, tol) {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!close(a[i], b[i], tol)) return false;
+      return true;
+    }
+    return Math.abs(a - b) <= (tol == null ? 1e-9 : tol) * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+  function rowSums(M) { return M.map(sum); }
+  function transpose(M) { return M[0].map(function (_, j) { return M.map(function (r) { return r[j]; }); }); }
+  function matmul(A, B) {
+    return A.map(function (r) { return B[0].map(function (_, j) { var t = 0; for (var k = 0; k < r.length; k++) t += r[k] * B[k][j]; return t; }); });
+  }
+  return { c: C, sum: sum, close: close, rowSums: rowSums, transpose: transpose, matmul: matmul, num: num, fmt: fmt, esc: esc, color: color, ink: ink, svg: svg, rect: rect, text: text, line: line, circle: circle, heat: heat, bars: bars, plot: plot, table: table };
+})();
+
 </script>
 <script>
 (function () {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>Scaled Dot-Product Attention</title>
 <style>
 /* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
 :root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
@@ -112,10 +112,10 @@ a{color:var(--acc)}
 <section id="ground"><h2><span class="n">5</span>Source grounding</h2>
   <p id="paper"></p>
   <div class="two">
-    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="src"><h3>Supported by the paper excerpt</h3><ul id="supp"></ul></div>
     <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
   </div>
-  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. </p>
 </section>
 
 <section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
@@ -123,9 +123,173 @@ a{color:var(--acc)}
 </section>
 </main>
 
-<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script type="application/json" id="spec">{"title": "Scaled Dot-Product Attention", "paper": {"title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": "2017", "section": "3.2.1"}, "equations": ["Attention(Q,K,V) = softmax(QK^T / sqrt(d_k)) V", "q·k = sum_{i=1}^{d_k} q_i k_i  has mean 0 and variance d_k"], "idea": "Each query row of Q is compared with every key row of K by a dot product, giving a similarity score per key. Dividing by sqrt(d_k) keeps those scores from growing with dimension, and softmax turns each query's score row into weights that sum to 1. The output row is then the weighted average of the value rows V, so a query that matches one key strongly copies mostly that key's value.", "why": "This single operation is the whole attention layer: it lets every position pull information from every other position in one parallel matrix multiply, with no recurrence.", "symbols": [{"sym": "Q", "meaning": "query matrix, one row per query, d_k columns"}, {"sym": "K", "meaning": "key matrix, one row per key, d_k columns"}, {"sym": "V", "meaning": "value matrix, one row per key, d_v columns"}, {"sym": "d_k", "meaning": "key/query dimension, the number of columns of Q and K"}, {"sym": "d_v", "meaning": "value dimension, the number of columns of V"}, {"sym": "QK^T", "meaning": "matrix of raw dot-product similarity scores"}, {"sym": "sqrt(d_k)", "meaning": "scaling factor that counteracts score growth with dimension"}, {"sym": "softmax", "meaning": "row-wise normalization of scores into weights summing to 1"}], "steps": ["Read the score matrix S = QK^T: entry (i,j) is how similar query i is to key j.", "Toggle scaling to see S/sqrt(d_k) shrink the scores; softmax is applied to whichever matrix is shown.", "Read the weight matrix A: each row is a probability distribution over the keys.", "Read the output A V: row i is the weighted average of the value rows, weighted by row i of A."], "controls": [{"id": "Q", "label": "Queries Q (rows = queries, cols = d_k)", "type": "matrix", "default": [[1, 0], [0, 1]], "min": -3, "max": 3, "step": 0.5, "rowLabels": ["q1", "q2"], "colLabels": ["d1", "d2"], "help": "Each row is one query vector."}, {"id": "K", "label": "Keys K (rows = keys, cols = d_k)", "type": "matrix", "default": [[1, 0], [0, 1]], "min": -3, "max": 3, "step": 0.5, "rowLabels": ["k1", "k2"], "colLabels": ["d1", "d2"], "help": "Each row is one key vector; must have the same number of columns as Q."}, {"id": "V", "label": "Values V (rows = keys, cols = d_v)", "type": "matrix", "default": [[1, 0], [0, 1]], "min": -3, "max": 3, "step": 0.5, "rowLabels": ["k1", "k2"], "colLabels": ["v1", "v2"], "help": "Row j is the value attached to key j; must have as many rows as K."}, {"id": "scale", "label": "Apply 1/sqrt(d_k) scaling", "type": "toggle", "default": true, "help": "Off = plain dot-product attention, which the paper says degrades for large d_k."}, {"id": "temperature", "label": "Extra score multiplier 1/T", "type": "range", "min": 0.25, "max": 4, "step": 0.25, "default": 1, "help": "Multiplies the scores before softmax; larger T flattens the weights, smaller T sharpens them."}], "explorations": [{"title": "Equal scores: uniform attention", "change": "Set Q and K so every query has the same dot product with every key, then look at the weight matrix.", "observe": "Every entry of the weight matrix is the same, and the output rows are all identical to the average of the value rows.", "why": "With identical scores the softmax numerator is the same for every key, so each weight is 1/number_of_keys; the output is the plain mean of V.", "set": {"Q": [[1, 0], [1, 0]], "K": [[1, 0], [1, 0]], "V": [[1, 0], [0, 1]], "scale": true, "temperature": 1}, "expect": "s.A.every(r=>r.every(w=>H.close(w,1/s.A[0].length)))"}, {"title": "One dominant score: attention collapses onto one value", "change": "Make query q1 align strongly with key k1 and q2 align strongly with key k2, then read the weight matrix and output.", "observe": "Each weight row is concentrated on a single key, and each output row is nearly a copy of that key's value row.", "why": "A large score gap survives the softmax: the winning weight approaches 1 while the others approach 0, so the weighted sum is dominated by one value vector.", "set": {"Q": [[3, 0], [0, 3]], "K": [[3, 0], [0, 3]], "V": [[1, 0], [0, 1]], "scale": true, "temperature": 0.25}, "expect": "s.A[0][0]>0.99 && s.A[1][1]>0.99"}], "limitation": "The scaling factor 1/sqrt(d_k) is a variance argument, not a learned parameter: it assumes query and key components are roughly independent with mean 0 and variance 1, so the dot product has variance d_k. If your features are correlated or on a very different scale, the fixed 1/sqrt(d_k) may over- or under-shrink the scores, and the extra temperature control here is a stand-in for that mismatch, not something the paper uses.", "invariants": [{"label": "Every attention weight row sums to 1", "test": "s.A.every(r=>H.close(H.sum(r),1))"}, {"label": "All weights are non-negative", "test": "s.A.every(r=>r.every(w=>w>=-1e-12))"}, {"label": "Output equals the weighted sum of V", "test": "s.out.every((r,i)=>r.every((x,j)=>H.close(x,H.sum(s.A[i].map((w,k)=>w*s.V[k][j])))))"}, {"label": "Output has one row per query and d_v columns", "test": "s.out.length===s.Q.length && s.out.every(r=>r.length===s.V[0].length)"}], "tests": [{"label": "Scaling off with large scores: weights saturate", "set": {"Q": [[3, 0], [0, 3]], "K": [[3, 0], [0, 3]], "V": [[1, 0], [0, 1]], "scale": false, "temperature": 1}, "test": "s.A[0][0]>s.A[0][1] && s.A[1][1]>s.A[1][0]"}, {"label": "Zero queries give uniform weights and mean of V", "set": {"Q": [[0, 0], [0, 0]], "K": [[1, 0], [0, 1]], "V": [[2, 0], [0, 2]], "scale": true, "temperature": 1}, "test": "s.A.every(r=>r.every(w=>H.close(w,0.5))) && H.close(s.out[0][0],1)"}], "supported": ["The input consists of queries and keys of dimension d_k, and values of dimension d_v (Section 3.2.1).", "We compute the dot products of the query with all keys, divide each by sqrt(d_k), and apply a softmax function to obtain the weights on the values (Section 3.2.1).", "Attention(Q,K,V) = softmax(QK^T / sqrt(d_k)) V (Equation 1).", "Dot-product attention is identical to our algorithm, except for the scaling factor of 1/sqrt(d_k) (Section 3.2.1).", "For large d_k the dot products grow large in magnitude, pushing the softmax into regions with extremely small gradients, so the dot products are scaled by 1/sqrt(d_k) (Section 3.2.1)."], "ours": ["A 2x2 toy: two queries, two keys, d_k = d_v = 2, with entries editable in steps of 0.5.", "The extra 1/T score multiplier is our addition to make the sharpening effect visible; the paper only uses 1/sqrt(d_k).", "We show the raw score matrix and the softmax weight matrix side by side rather than the paper's single Figure 2 box.", "No masking, multi-head projection or training is modelled here; this is one attention head on fixed inputs."], "compute": "return (function(p,H){\n  const Q=p.Q, K=p.K, V=p.V;\n  const nq=Q.length, nk=K.length, dk=Q[0].length, dv=V[0].length;\n  const Kt=H.transpose(K);\n  const raw=H.matmul(Q,Kt);\n  const scaleOn=!!p.scale;\n  const T=p.temperature>0?p.temperature:1;\n  const denom=(scaleOn?Math.sqrt(dk):1)*T;\n  const S=raw.map(r=>r.map(x=>x/denom));\n  const A=S.map(r=>{\n    const m=Math.max.apply(null,r);\n    const ex=r.map(x=>Math.exp(x-m));\n    const z=H.sum(ex);\n    return ex.map(x=>z>0?x/z:1/r.length);\n  });\n  const out=H.matmul(A,V);\n  const rowSums=H.rowSums(A);\n  const maxDev=Math.max.apply(null,rowSums.map(x=>Math.abs(x-1)));\n  const maxW=Math.max.apply(null,A.map(r=>Math.max.apply(null,r)));\n  const minW=Math.min.apply(null,A.map(r=>Math.min.apply(null,r)));\n  const show=[\n    {label:\"d_k (query/key dim)\",value:dk},\n    {label:\"d_v (value dim)\",value:dv},\n    {label:\"scaling 1/sqrt(d_k)\",value:scaleOn?H.fmt(1/Math.sqrt(dk),4):\"off (1)\"},\n    {label:\"score divisor (scaling x T)\",value:H.fmt(denom,4)},\n    {label:\"raw scores QK^T\",value:{matrix:raw,rows:nq,cols:nk}},\n    {label:\"scaled scores S\",value:{matrix:S,rows:nq,cols:nk}},\n    {label:\"attention weights A = softmax(S)\",value:{matrix:A,rows:nq,cols:nk}},\n    {label:\"output AV\",value:{matrix:out,rows:nq,cols:dv}},\n    {label:\"row sums of A\",value:rowSums.map(x=>H.fmt(x,6)).join(\", \")},\n    {label:\"max |row sum - 1|\",value:H.fmt(maxDev,3)},\n    {label:\"largest weight\",value:H.fmt(maxW,4)},\n    {label:\"smallest weight\",value:H.fmt(minW,4)}\n  ];\n  return {show:show,Q:Q,K:K,V:V,raw:raw,S:S,A:A,out:out,rowSums:rowSums,dk:dk,dv:dv,nq:nq,nk:nk,scaleOn:scaleOn,denom:denom};\n})(p,H);", "draw": "return (function(s,p,H){\n  const w=760,h=560;\n  const cw=54,ch=34;\n  const qLab=s.Q.map((_,i)=>\"q\"+(i+1));\n  const kLab=s.K.map((_,i)=>\"k\"+(i+1));\n  const vLab=s.V[0].map((_,j)=>\"v\"+(j+1));\n  let g=\"\";\n  const blockW=s.nk*cw+50;\n  const blockH=s.nq*ch+45;\n  const col1=20, col2=col1+blockW+30;\n  const row1=40, row2=row1+blockH+40;\n  const maxAbs=Math.max(1e-9,Math.max.apply(null,s.raw.map(r=>Math.max.apply(null,r.map(x=>Math.abs(x))))));\n  g+=H.heat(s.raw,{x:col1,y:row1,cw:cw,ch:ch,d:2,max:maxAbs,rows:qLab,cols:kLab,title:\"raw scores QK^T\"});\n  g+=H.heat(s.S,{x:col2,y:row1,cw:cw,ch:ch,d:2,max:maxAbs,rows:qLab,cols:kLab,title:s.scaleOn?\"scaled scores QK^T / sqrt(d_k)\":\"scores (scaling off)\"});\n  g+=H.heat(s.A,{x:col1,y:row2,cw:cw,ch:ch,d:3,max:1,rows:qLab,cols:kLab,title:\"weights A = softmax(scores)\"});\n  g+=H.heat(s.out,{x:col2,y:row2,cw:cw,ch:ch,d:2,max:Math.max(1e-9,Math.max.apply(null,s.out.map(r=>Math.max.apply(null,r.map(x=>Math.abs(x)))))),rows:qLab,cols:vLab,title:\"output AV (weighted sum of V)\"});\n  const yNote=row2+blockH+22;\n  g+=H.text(col1,yNote,\"divisor = \"+(s.scaleOn?\"1/sqrt(\"+s.dk+\")\":\"1\")+\" x T = \"+H.fmt(s.denom,3)+\"   |   each weight row sums to 1\",{size:12,fill:H.c.mute});\n  g+=H.text(col1,yNote+18,\"output row i = sum_j A[i][j] * V[j]  (a convex combination of the value rows)\",{size:12,fill:H.c.mute});\n  return H.svg(w,h,g,\"Scaled dot-product attention: raw scores, scaled scores, softmax weights and output\");\n})(s,p,H);", "dropped_checks": ["Identity Q and K with scaling on: uniform weights"], "source_url": "https://arxiv.org/html/1706.03762v7", "audience": "engineering undergraduate"}</script>
 <script>
-__RUNTIME__
+/* Generic drawing/formatting helpers shared by the page and the Python-side checker.
+   Pure JS: no DOM access, so it also runs inside the headless QuickJS checker.
+   Generated spec code calls these as H.*; every helper returns an SVG/HTML string. */
+var H = (function () {
+  function num(x) { x = Number(x); return isFinite(x) ? x : 0; }
+  function fmt(x, d) {
+    if (typeof x !== 'number') return String(x);
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
+    d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
+    var r = Number(x.toFixed(d));
+    if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
+    return String(r);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Theme-aware colours: CSS variables defined per theme in template.html, so charts follow the theme switcher.
+  var C = { ink: 'var(--ink)', mute: 'var(--mute)', chart1: 'var(--chart1)', chart2: 'var(--chart2)', chart3: 'var(--chart3)',
+            good: 'var(--ok)', bad: 'var(--bad)', grid: 'var(--grid)', axis: 'var(--axis)', bg: 'var(--card)' };
+  // sequential colour, t in [0,1]: theme's pale heat colour -> theme's deep heat colour
+  function color(t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return 'color-mix(in srgb, var(--heat) ' + Math.round(t * 100) + '%, var(--heat0))';
+  }
+  function ink(t) { return num(t) > 0.55 ? 'var(--onheat)' : 'var(--ink)'; }
+  function svg(w, h, inner, label) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h +
+      '" width="100%" style="max-width:' + w + 'px;height:auto" role="img" aria-label="' + esc(label || 'visualization') +
+      '" font-family="system-ui,Segoe UI,Arial,sans-serif">' + inner + '</svg>';
+  }
+  function rect(x, y, w, h, fill, extra) {
+    return '<rect x="' + num(x) + '" y="' + num(y) + '" width="' + Math.max(0, num(w)) + '" height="' + Math.max(0, num(h)) +
+      '" fill="' + (fill || 'var(--grid)') + '" ' + (extra || '') + '/>';
+  }
+  function text(x, y, s, o) {
+    o = o || {};
+    if (s === undefined || s === null || (typeof s === 'number' && !isFinite(s))) s = '';
+    return '<text x="' + num(x) + '" y="' + num(y) + '" font-size="' + (o.size || 12) + '" text-anchor="' + (o.anchor || 'start') +
+      '" fill="' + (o.fill || 'var(--ink)') + '"' + (o.weight ? ' font-weight="' + o.weight + '"' : '') +
+      (o.rotate ? ' transform="rotate(' + o.rotate + ' ' + num(x) + ' ' + num(y) + ')"' : '') + '>' + esc(s) + '</text>';
+  }
+  function line(x1, y1, x2, y2, stroke, w, dash) {
+    return '<line x1="' + num(x1) + '" y1="' + num(y1) + '" x2="' + num(x2) + '" y2="' + num(y2) + '" stroke="' + (stroke || 'var(--axis)') +
+      '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  }
+  function circle(x, y, r, fill, extra) {
+    return '<circle cx="' + num(x) + '" cy="' + num(y) + '" r="' + num(r) + '" fill="' + (fill || 'var(--chart2)') + '" ' + (extra || '') + '/>';
+  }
+  // Matrix as coloured cells with numbers. o: x,y,cw,ch,d,max,min,rows,cols,title,signed
+  function heat(M, o) {
+    o = o || {};
+    var x0 = o.x || 0, y0 = o.y || 0, cw = o.cw || 54, ch = o.ch || 34, d = o.d == null ? 2 : o.d;
+    var flat = [].concat.apply([], M), mx = o.max != null ? o.max : Math.max.apply(null, flat.map(Math.abs).concat([1e-9]));
+    var mn = o.min != null ? o.min : 0;
+    var out = '';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (!Array.isArray(o.cols)) o.cols = null;
+    if (o.title) out += text(x0, y0 - 8 - (o.cols ? 14 : 0), o.title, { weight: 'bold', size: 13 });
+    for (var i = 0; i < M.length; i++) {
+      if (o.rows && o.rows[i] != null) out += text(x0 - 6, y0 + i * ch + ch / 2 + 4, o.rows[i], { anchor: 'end', size: 11 });
+      for (var j = 0; j < M[i].length; j++) {
+        var v = num(M[i][j]), t = mx > mn ? (Math.abs(v) - mn) / (mx - mn) : 0;
+        out += rect(x0 + j * cw, y0 + i * ch, cw - 2, ch - 2, color(t), 'rx="3"') +
+          text(x0 + j * cw + (cw - 2) / 2, y0 + i * ch + ch / 2 + 4, fmt(v, d), { anchor: 'middle', size: 12, fill: ink(t) });
+      }
+    }
+    if (o.cols) for (var k = 0; k < (M[0] || []).length && k < o.cols.length; k++) out += text(x0 + k * cw + cw / 2, y0 - 6, o.cols[k], { anchor: 'middle', size: 11 });
+    return out;
+  }
+  // Vertical bars. o: x,y,w,h,labels,max,d,fill,fills,title,ylabel
+  function bars(vals, o) {
+    o = o || {};
+    var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
+    if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    for (var t = 0; t <= 4; t++) {
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
+      if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
+    }
+    for (var i = 0; i < n; i++) {
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
+    }
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // Line plot. series:[{xs,ys,color,label,dash}] o: x,y,w,h,xmin,xmax,ymin,ymax,xlabel,ylabel,title,marks:[{x,y,label}]
+  function plot(series, o) {
+    o = o || {};
+    var x0 = o.x || 46, y0 = o.y || 14, w = o.w || 320, h = o.h || 200, all = [];
+    series.forEach(function (s) { s.xs.forEach(function (_, i) { all.push([num(s.xs[i]), num(s.ys[i])]); }); });
+    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, all.map(function (p) { return p[0]; }));
+    var xmax = o.xmax != null ? o.xmax : Math.max.apply(null, all.map(function (p) { return p[0]; }));
+    var ymin = o.ymin != null ? o.ymin : Math.min.apply(null, all.map(function (p) { return p[1]; }));
+    var ymax = o.ymax != null ? o.ymax : Math.max.apply(null, all.map(function (p) { return p[1]; }));
+    if (xmax === xmin) xmax = xmin + 1;
+    if (ymax === ymin) ymax = ymin + 1;
+    function X(v) { return x0 + (num(v) - xmin) / (xmax - xmin) * w; }
+    function Y(v) { return y0 + h - (num(v) - ymin) / (ymax - ymin) * h; }
+    var out = '';
+    if (o.title) out += text(x0, y0 - 4, o.title, { weight: 'bold', size: 13 });
+    for (var t = 0; t <= 4; t++) {
+      var gx = x0 + w * t / 4, gy = y0 + h - h * t / 4;
+      out += line(gx, y0, gx, y0 + h, 'var(--grid)') + line(x0, gy, x0 + w, gy, 'var(--grid)') +
+        text(gx, y0 + h + 15, fmt(xmin + (xmax - xmin) * t / 4, 2), { anchor: 'middle', size: 10 }) +
+        text(x0 - 6, gy + 4, fmt(ymin + (ymax - ymin) * t / 4, 2), { anchor: 'end', size: 10 });
+    }
+    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    series.forEach(function (s, k) {
+      var pts = s.xs.map(function (_, i) { return X(s.xs[i]).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1); }).join(' ');
+      out += '<polyline points="' + pts + '" fill="none" stroke="' + (s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3]) +
+        '" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+      if (s.label) out += text(x0 + w - 4, y0 + 14 + 14 * k, s.label, { anchor: 'end', size: 11, fill: s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3] });
+    });
+    (o.marks || []).forEach(function (m) {
+      out += circle(X(m.x), Y(m.y), 5, m.color || 'var(--chart2)') +
+        (m.label ? text(X(m.x) + 8, Y(m.y) - 8, m.label, { size: 11 }) : '');
+    });
+    if (o.xlabel) out += text(x0 + w / 2, y0 + h + 32, o.xlabel, { anchor: 'middle', size: 11 });
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // HTML table of a matrix. o: rows, cols, d
+  function table(M, o) {
+    o = o || {};
+    if (!Array.isArray(M[0])) M = [M];
+    var d = o.d == null ? 3 : o.d, s = '<table class="mat">';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (Array.isArray(o.cols)) s += '<tr><th></th>' + o.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    M.forEach(function (r, i) {
+      s += '<tr>' + (o.rows && o.rows[i] != null ? '<th>' + esc(o.rows[i]) + '</th>' : (o.rows ? '<th></th>' : '')) +
+        r.map(function (v) { return '<td>' + fmt(v, d) + '</td>'; }).join('') + '</tr>';
+    });
+    return s + '</table>';
+  }
+  // ---- small numeric helpers (for compute code and invariant tests) ----
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  // numbers, or arrays/matrices of any depth compared element by element (same shape required)
+  function close(a, b, tol) {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!close(a[i], b[i], tol)) return false;
+      return true;
+    }
+    return Math.abs(a - b) <= (tol == null ? 1e-9 : tol) * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+  function rowSums(M) { return M.map(sum); }
+  function transpose(M) { return M[0].map(function (_, j) { return M.map(function (r) { return r[j]; }); }); }
+  function matmul(A, B) {
+    return A.map(function (r) { return B[0].map(function (_, j) { var t = 0; for (var k = 0; k < r.length; k++) t += r[k] * B[k][j]; return t; }); });
+  }
+  return { c: C, sum: sum, close: close, rowSums: rowSums, transpose: transpose, matmul: matmul, num: num, fmt: fmt, esc: esc, color: color, ink: ink, svg: svg, rect: rect, text: text, line: line, circle: circle, heat: heat, bars: bars, plot: plot, table: table };
+})();
+
 </script>
 <script>
 (function () {

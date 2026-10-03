@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>Shannon Entropy of a Discrete Distribution</title>
 <style>
 /* Themes. Every colour on the page, including the SVG charts (via H.c.* and H.color in runtime.js), comes from these variables. */
 :root,:root[data-theme="basic"]{--bg:#f6f8fb;--card:#fff;--card2:#fbfcfe;--ink:#14213d;--mute:#52607a;--line:#d9e0ea;--acc:#1854b0;--accbg:#eaf1fb;--onacc:#fff;--ok:#1b7f4b;--bad:#b3261e;--badbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--warnborder:#e0a100;--focus:#f0a500;--chart1:#2563b8;--chart2:#c0392b;--chart3:#2e8b57;--grid:#e3e8ef;--axis:#555;--heat0:#ecf4fc;--heat:#1854b0;--onheat:#fff}
@@ -112,10 +112,10 @@ a{color:var(--acc)}
 <section id="ground"><h2><span class="n">5</span>Source grounding</h2>
   <p id="paper"></p>
   <div class="two">
-    <div class="src"><h3>__SUPPHEAD__</h3><ul id="supp"></ul></div>
+    <div class="src"><h3>Supported by the paper excerpt</h3><ul id="supp"></ul></div>
     <div class="own"><h3>Our own examples and simplifications</h3><ul id="ours"></ul></div>
   </div>
-  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. __SRCNOTE__</p>
+  <p class="note">This page is a small interactive illustration of the mechanism. It does not reproduce the paper's experiments or results. </p>
 </section>
 
 <section id="selfcheck"><h2><span class="n">6</span>Self-checks (computed live in your browser)</h2>
@@ -123,9 +123,173 @@ a{color:var(--acc)}
 </section>
 </main>
 
-<script type="application/json" id="spec">__SPEC_JSON__</script>
+<script type="application/json" id="spec">{"title": "Shannon Entropy of a Discrete Distribution", "paper": {"title": "A Mathematical Theory of Communication", "authors": "C. E. Shannon", "year": "1948", "section": "Section 6, Choice, Uncertainty and Entropy"}, "equations": ["H = -K ∑_{i=1}^{n} p_i log p_i", "H = -∑ p_i log p_i", "H = -(p log p + q log q),  q = 1 - p"], "idea": "A discrete source has n possible events with known probabilities p_i. Shannon asks for a measure of how much choice or uncertainty the selection involves. Requiring continuity, monotonic growth with n when all p_i are equal, and consistency under decomposing a choice into successive choices forces H = -∑ p_i log p_i. With log base 2, H is measured in bits.", "why": "Entropy is the fundamental limit on how much a source can be compressed and how much information each symbol carries, so it underpins coding, channels and inference.", "symbols": [{"sym": "n", "meaning": "number of possible outcomes (events)"}, {"sym": "p_i", "meaning": "probability of outcome i, with ∑ p_i = 1"}, {"sym": "H", "meaning": "entropy of the distribution, in bits when the log base is 2"}, {"sym": "-p_i log2 p_i", "meaning": "contribution of outcome i to the total entropy"}, {"sym": "K", "meaning": "positive constant fixing the unit of measure (K = 1/log 2 for bits)"}], "steps": ["Read the probability bars: each outcome i has height p_i and the bars sum to 1.", "Read the contribution bars: outcome i contributes -p_i log2 p_i bits; a certain outcome (p_i = 1) contributes 0, and very small p_i contribute little because they are rare.", "The total H is the sum of the contributions; it is largest when the p_i are equal, giving log2 n bits."], "controls": [{"id": "n", "label": "Number of outcomes n", "type": "range", "min": 2, "max": 6, "step": 1, "default": 4, "help": "How many possible events the source has."}, {"id": "p", "label": "Probabilities p_i", "type": "matrix", "default": [[0.25, 0.25, 0.25, 0.25]], "min": 0, "max": 1, "step": 0.01, "rowLabels": ["p"], "help": "One row of n probabilities; they are normalised to sum to 1."}, {"id": "base", "label": "Log base", "type": "select", "options": [{"value": "2", "label": "2 (bits)"}, {"value": "e", "label": "e (nats)"}, {"value": "10", "label": "10 (dits)"}], "default": "2", "help": "Unit of measure; Shannon's K amounts to this choice."}], "explorations": [{"title": "Certainty gives zero bits", "change": "Set n = 2 and put all probability on one outcome.", "observe": "One probability bar is at full height and the other is zero; the contribution bars are both zero and the total H reads 0.", "why": "With p = (1,0) every term -p_i log2 p_i vanishes (the 0 log 0 term is taken as 0), so H = 0: no choice, no uncertainty.", "set": {"n": 2, "p": [[1, 0, 0, 0]], "base": "2"}, "expect": "H.close(s.H,0)"}, {"title": "Four equally likely outcomes give two bits", "change": "Set n = 4 and make all four probabilities equal.", "observe": "All four probability bars are equal and all four contribution bars are equal; the total H reads 2 bits.", "why": "Equal p_i = 1/4 give H = log2 4 = 2 bits, the maximum for n = 4, matching Shannon's property 2 that H = log n when all p_i are equal.", "set": {"n": 4, "p": [[0.25, 0.25, 0.25, 0.25]], "base": "2"}, "expect": "H.close(s.H,2)"}], "limitation": "Entropy depends only on the probabilities, not on the labels or the meaning of the outcomes, so two very different sources with the same distribution have the same H. Also, the formula assumes the p_i are known and fixed; it says nothing about a source whose statistics drift. A common misunderstanding is that H measures the information in one particular message, whereas it measures the average uncertainty per symbol over the source.", "invariants": [{"label": "Entropy is non-negative", "test": "s.H >= -1e-9"}, {"label": "Entropy never exceeds log2 n bits", "test": "s.H <= Math.log2(p.n) + 1e-9"}, {"label": "Contributions sum to the total", "test": "H.close(H.sum(s.contrib), s.H, 1e-9)"}, {"label": "Normalised probabilities sum to one", "test": "H.close(H.sum(s.pn), 1, 1e-9)"}], "tests": [{"label": "Two equally likely outcomes give one bit", "set": {"n": 2, "p": [[0.5, 0.5, 0, 0]], "base": "2"}, "test": "H.close(s.H,1)"}, {"label": "A zero probability is handled without NaN", "set": {"n": 3, "p": [[0.5, 0.5, 0, 0]], "base": "2"}, "test": "H.close(s.H,1) && s.contrib.every(c=>isFinite(c))"}, {"label": "Three outcomes 1/2, 1/3, 1/6 (Shannon's Fig. 6)", "set": {"n": 3, "p": [[0.5, 0.3333333333, 0.1666666667, 0]], "base": "2"}, "test": "H.close(s.H,1.4591479170,1e-6)"}], "supported": ["H should be continuous in the p_i (Section 6, property 1).", "If all p_i are equal, p_i = 1/n, then H should be a monotonic increasing function of n (Section 6, property 2).", "The only H satisfying the three assumptions is H = -K ∑ p_i log p_i (Theorem 2).", "H = 0 if and only if all the p_i but one are zero, this one having the value unity (Section 6, property 1).", "For a given n, H is a maximum and equal to log n when all the p_i are equal (Section 6, property 2)."], "ours": ["We use a small n (2 to 6) and a one-row matrix of probabilities so the arithmetic is easy to follow.", "We normalise the entered probabilities to sum to 1, so the page never divides by zero or produces NaN.", "We let the learner switch the log base to 2, e or 10 to see that K is just a choice of unit; the brief's checks use base 2."], "compute": "const n = Math.max(2, Math.min(6, Math.round(p.n)));\nconst raw = (p.p && p.p[0]) ? p.p[0].slice(0, n) : [];\nwhile (raw.length < n) raw.push(0);\nlet vals = raw.map(v => (isFinite(v) && v > 0) ? v : 0);\nlet tot = H.sum(vals);\nif (!(tot > 0)) { vals = vals.map(() => 1 / n); tot = 1; }\nconst pn = vals.map(v => v / tot);\nconst base = p.base === 'e' ? Math.E : (p.base === '10' ? 10 : 2);\nconst logb = (x) => Math.log(x) / Math.log(base);\nconst contrib = pn.map(q => q > 0 ? -q * logb(q) : 0);\nconst Hval = H.sum(contrib);\nconst labels = pn.map((_, i) => 'p' + (i + 1));\nconst maxH = logb(n);\nconst uniform = pn.every(q => H.close(q, 1 / n, 1e-9));\nconst certain = pn.some(q => H.close(q, 1, 1e-9));\nconst show = [\n  { label: 'n (outcomes)', value: n },\n  { label: 'normalised p_i', value: pn.map(q => H.fmt(q, 4)).join(', ') },\n  { label: 'contributions -p_i log p_i', value: contrib.map(c => H.fmt(c, 4)).join(', ') },\n  { label: 'H (total entropy)', value: H.fmt(Hval, 4) + (base === 2 ? ' bits' : (base === Math.E ? ' nats' : ' dits')) },\n  { label: 'log n (max for this n)', value: H.fmt(maxH, 4) },\n  { label: 'all p_i equal?', value: uniform ? 'yes' : 'no' },\n  { label: 'certain outcome?', value: certain ? 'yes' : 'no' }\n];\nreturn { show, pn, contrib, H: Hval, n, base, labels, maxH, uniform, certain };", "draw": "const n = s.n;\nconst pn = s.pn, contrib = s.contrib;\nconst W = 640, Hh = 430;\nconst parts = [];\nparts.push(H.text(20, 24, 'Probabilities p_i (sum to 1)', { size: 13, weight: 'bold', fill: H.c.ink }));\nparts.push(H.bars(pn, { x: 60, y: 60, w: 240, h: 120, labels: s.labels, max: 1, d: 2, title: '', ylabel: 'p_i' }));\nparts.push(H.text(20, 220, 'Contributions -p_i log p_i', { size: 13, weight: 'bold', fill: H.c.ink }));\nconst cmax = Math.max(1e-9, Math.max.apply(null, contrib.concat([s.maxH])));\nparts.push(H.bars(contrib, { x: 60, y: 256, w: 240, h: 120, labels: s.labels, max: cmax, d: 3, title: '', ylabel: 'bits' }));\nparts.push(H.text(340, 24, 'Entropy H = sum of contributions', { size: 13, weight: 'bold', fill: H.c.ink }));\nparts.push(H.text(340, 48, 'H = ' + H.fmt(s.H, 4) + (s.base === 2 ? ' bits' : (s.base === Math.E ? ' nats' : ' dits')), { size: 14, fill: H.c.chart1, weight: 'bold' }));\nparts.push(H.text(340, 70, 'max log n = ' + H.fmt(s.maxH, 4), { size: 12, fill: H.c.mute }));\nconst barW = 200, barH = 16;\nconst frac = s.maxH > 0 ? Math.min(1, s.H / s.maxH) : 0;\nparts.push(H.rect(340, 84, barW, barH, H.c.grid));\nparts.push(H.rect(340, 84, barW * frac, barH, H.c.chart1));\nparts.push(H.text(340, 118, 'H / log n = ' + H.fmt(frac, 3), { size: 12, fill: H.c.ink }));\nconst rows = s.labels.map((lab, i) => [lab, H.fmt(pn[i], 4), H.fmt(contrib[i], 4)]);\nparts.push(H.table(rows, { rows: ['outcome', 'p_i', '-p_i log p_i'] }));\nparts.push(H.text(340, 200, s.uniform ? 'All p_i equal: H is at its maximum log n.' : (s.certain ? 'One p_i = 1: H = 0, no uncertainty.' : 'Unequal p_i: H lies between 0 and log n.'), { size: 12, fill: H.c.mute }));\nreturn H.svg(W, Hh, parts.join(''), 'Entropy of a discrete probability distribution');", "source_url": "https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf", "audience": "engineering undergraduate"}</script>
 <script>
-__RUNTIME__
+/* Generic drawing/formatting helpers shared by the page and the Python-side checker.
+   Pure JS: no DOM access, so it also runs inside the headless QuickJS checker.
+   Generated spec code calls these as H.*; every helper returns an SVG/HTML string. */
+var H = (function () {
+  function num(x) { x = Number(x); return isFinite(x) ? x : 0; }
+  function fmt(x, d) {
+    if (typeof x !== 'number') return String(x);
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
+    d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
+    var r = Number(x.toFixed(d));
+    if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
+    return String(r);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  // Theme-aware colours: CSS variables defined per theme in template.html, so charts follow the theme switcher.
+  var C = { ink: 'var(--ink)', mute: 'var(--mute)', chart1: 'var(--chart1)', chart2: 'var(--chart2)', chart3: 'var(--chart3)',
+            good: 'var(--ok)', bad: 'var(--bad)', grid: 'var(--grid)', axis: 'var(--axis)', bg: 'var(--card)' };
+  // sequential colour, t in [0,1]: theme's pale heat colour -> theme's deep heat colour
+  function color(t) {
+    t = Math.max(0, Math.min(1, num(t)));
+    return 'color-mix(in srgb, var(--heat) ' + Math.round(t * 100) + '%, var(--heat0))';
+  }
+  function ink(t) { return num(t) > 0.55 ? 'var(--onheat)' : 'var(--ink)'; }
+  function svg(w, h, inner, label) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h +
+      '" width="100%" style="max-width:' + w + 'px;height:auto" role="img" aria-label="' + esc(label || 'visualization') +
+      '" font-family="system-ui,Segoe UI,Arial,sans-serif">' + inner + '</svg>';
+  }
+  function rect(x, y, w, h, fill, extra) {
+    return '<rect x="' + num(x) + '" y="' + num(y) + '" width="' + Math.max(0, num(w)) + '" height="' + Math.max(0, num(h)) +
+      '" fill="' + (fill || 'var(--grid)') + '" ' + (extra || '') + '/>';
+  }
+  function text(x, y, s, o) {
+    o = o || {};
+    if (s === undefined || s === null || (typeof s === 'number' && !isFinite(s))) s = '';
+    return '<text x="' + num(x) + '" y="' + num(y) + '" font-size="' + (o.size || 12) + '" text-anchor="' + (o.anchor || 'start') +
+      '" fill="' + (o.fill || 'var(--ink)') + '"' + (o.weight ? ' font-weight="' + o.weight + '"' : '') +
+      (o.rotate ? ' transform="rotate(' + o.rotate + ' ' + num(x) + ' ' + num(y) + ')"' : '') + '>' + esc(s) + '</text>';
+  }
+  function line(x1, y1, x2, y2, stroke, w, dash) {
+    return '<line x1="' + num(x1) + '" y1="' + num(y1) + '" x2="' + num(x2) + '" y2="' + num(y2) + '" stroke="' + (stroke || 'var(--axis)') +
+      '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  }
+  function circle(x, y, r, fill, extra) {
+    return '<circle cx="' + num(x) + '" cy="' + num(y) + '" r="' + num(r) + '" fill="' + (fill || 'var(--chart2)') + '" ' + (extra || '') + '/>';
+  }
+  // Matrix as coloured cells with numbers. o: x,y,cw,ch,d,max,min,rows,cols,title,signed
+  function heat(M, o) {
+    o = o || {};
+    var x0 = o.x || 0, y0 = o.y || 0, cw = o.cw || 54, ch = o.ch || 34, d = o.d == null ? 2 : o.d;
+    var flat = [].concat.apply([], M), mx = o.max != null ? o.max : Math.max.apply(null, flat.map(Math.abs).concat([1e-9]));
+    var mn = o.min != null ? o.min : 0;
+    var out = '';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (!Array.isArray(o.cols)) o.cols = null;
+    if (o.title) out += text(x0, y0 - 8 - (o.cols ? 14 : 0), o.title, { weight: 'bold', size: 13 });
+    for (var i = 0; i < M.length; i++) {
+      if (o.rows && o.rows[i] != null) out += text(x0 - 6, y0 + i * ch + ch / 2 + 4, o.rows[i], { anchor: 'end', size: 11 });
+      for (var j = 0; j < M[i].length; j++) {
+        var v = num(M[i][j]), t = mx > mn ? (Math.abs(v) - mn) / (mx - mn) : 0;
+        out += rect(x0 + j * cw, y0 + i * ch, cw - 2, ch - 2, color(t), 'rx="3"') +
+          text(x0 + j * cw + (cw - 2) / 2, y0 + i * ch + ch / 2 + 4, fmt(v, d), { anchor: 'middle', size: 12, fill: ink(t) });
+      }
+    }
+    if (o.cols) for (var k = 0; k < (M[0] || []).length && k < o.cols.length; k++) out += text(x0 + k * cw + cw / 2, y0 - 6, o.cols[k], { anchor: 'middle', size: 11 });
+    return out;
+  }
+  // Vertical bars. o: x,y,w,h,labels,max,d,fill,fills,title,ylabel
+  function bars(vals, o) {
+    o = o || {};
+    var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
+    if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    for (var t = 0; t <= 4; t++) {
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
+      if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
+    }
+    for (var i = 0; i < n; i++) {
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
+    }
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // Line plot. series:[{xs,ys,color,label,dash}] o: x,y,w,h,xmin,xmax,ymin,ymax,xlabel,ylabel,title,marks:[{x,y,label}]
+  function plot(series, o) {
+    o = o || {};
+    var x0 = o.x || 46, y0 = o.y || 14, w = o.w || 320, h = o.h || 200, all = [];
+    series.forEach(function (s) { s.xs.forEach(function (_, i) { all.push([num(s.xs[i]), num(s.ys[i])]); }); });
+    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, all.map(function (p) { return p[0]; }));
+    var xmax = o.xmax != null ? o.xmax : Math.max.apply(null, all.map(function (p) { return p[0]; }));
+    var ymin = o.ymin != null ? o.ymin : Math.min.apply(null, all.map(function (p) { return p[1]; }));
+    var ymax = o.ymax != null ? o.ymax : Math.max.apply(null, all.map(function (p) { return p[1]; }));
+    if (xmax === xmin) xmax = xmin + 1;
+    if (ymax === ymin) ymax = ymin + 1;
+    function X(v) { return x0 + (num(v) - xmin) / (xmax - xmin) * w; }
+    function Y(v) { return y0 + h - (num(v) - ymin) / (ymax - ymin) * h; }
+    var out = '';
+    if (o.title) out += text(x0, y0 - 4, o.title, { weight: 'bold', size: 13 });
+    for (var t = 0; t <= 4; t++) {
+      var gx = x0 + w * t / 4, gy = y0 + h - h * t / 4;
+      out += line(gx, y0, gx, y0 + h, 'var(--grid)') + line(x0, gy, x0 + w, gy, 'var(--grid)') +
+        text(gx, y0 + h + 15, fmt(xmin + (xmax - xmin) * t / 4, 2), { anchor: 'middle', size: 10 }) +
+        text(x0 - 6, gy + 4, fmt(ymin + (ymax - ymin) * t / 4, 2), { anchor: 'end', size: 10 });
+    }
+    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    series.forEach(function (s, k) {
+      var pts = s.xs.map(function (_, i) { return X(s.xs[i]).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1); }).join(' ');
+      out += '<polyline points="' + pts + '" fill="none" stroke="' + (s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3]) +
+        '" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+      if (s.label) out += text(x0 + w - 4, y0 + 14 + 14 * k, s.label, { anchor: 'end', size: 11, fill: s.color || ['var(--chart1)', 'var(--chart2)', 'var(--chart3)'][k % 3] });
+    });
+    (o.marks || []).forEach(function (m) {
+      out += circle(X(m.x), Y(m.y), 5, m.color || 'var(--chart2)') +
+        (m.label ? text(X(m.x) + 8, Y(m.y) - 8, m.label, { size: 11 }) : '');
+    });
+    if (o.xlabel) out += text(x0 + w / 2, y0 + h + 32, o.xlabel, { anchor: 'middle', size: 11 });
+    if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
+    return out;
+  }
+  // HTML table of a matrix. o: rows, cols, d
+  function table(M, o) {
+    o = o || {};
+    if (!Array.isArray(M[0])) M = [M];
+    var d = o.d == null ? 3 : o.d, s = '<table class="mat">';
+    if (!Array.isArray(o.rows)) o.rows = null;
+    if (Array.isArray(o.cols)) s += '<tr><th></th>' + o.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    M.forEach(function (r, i) {
+      s += '<tr>' + (o.rows && o.rows[i] != null ? '<th>' + esc(o.rows[i]) + '</th>' : (o.rows ? '<th></th>' : '')) +
+        r.map(function (v) { return '<td>' + fmt(v, d) + '</td>'; }).join('') + '</tr>';
+    });
+    return s + '</table>';
+  }
+  // ---- small numeric helpers (for compute code and invariant tests) ----
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  // numbers, or arrays/matrices of any depth compared element by element (same shape required)
+  function close(a, b, tol) {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!close(a[i], b[i], tol)) return false;
+      return true;
+    }
+    return Math.abs(a - b) <= (tol == null ? 1e-9 : tol) * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+  function rowSums(M) { return M.map(sum); }
+  function transpose(M) { return M[0].map(function (_, j) { return M.map(function (r) { return r[j]; }); }); }
+  function matmul(A, B) {
+    return A.map(function (r) { return B[0].map(function (_, j) { var t = 0; for (var k = 0; k < r.length; k++) t += r[k] * B[k][j]; return t; }); });
+  }
+  return { c: C, sum: sum, close: close, rowSums: rowSums, transpose: transpose, matmul: matmul, num: num, fmt: fmt, esc: esc, color: color, ink: ink, svg: svg, rect: rect, text: text, line: line, circle: circle, heat: heat, bars: bars, plot: plot, table: table };
+})();
+
 </script>
 <script>
 (function () {

@@ -8,6 +8,7 @@ var H = (function () {
     if (isNaN(x)) return 'NaN';
     if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
     d = d == null ? 3 : d;
+    if (Math.abs(x) < 1e-12) return '0'; // floating-point noise, e.g. a mean of -2.8e-17
     var r = Number(x.toFixed(d));
     if (r === 0 && x !== 0) r = Number(x.toPrecision(2)); // never show a tiny non-zero value (e.g. 0.0001) as 0
     return String(r);
@@ -72,20 +73,24 @@ var H = (function () {
   function bars(vals, o) {
     o = o || {};
     var x0 = o.x || 40, y0 = o.y || 10, w = o.w || 300, h = o.h || 160, d = o.d == null ? 3 : o.d;
-    var mx = o.max != null ? o.max : Math.max.apply(null, vals.map(num).concat([1e-9]));
-    var n = vals.length, bw = w / Math.max(1, n), out = '';
+    var nums = vals.map(num);
+    var mx = o.max != null ? o.max : Math.max.apply(null, nums.concat([1e-9]));
+    var mn = o.min != null ? o.min : Math.min.apply(null, nums.concat([0])); // negative values get bars below a zero line
+    if (mx <= mn) mx = mn + 1;
+    function Y(v) { return y0 + h * (mx - v) / (mx - mn); }
+    var n = vals.length, bw = w / Math.max(1, n), out = '', yz = Y(Math.max(mn, Math.min(mx, 0)));
     if (o.title) out += text(x0, y0 - 2, o.title, { weight: 'bold', size: 13 });
-    out += line(x0, y0 + h, x0 + w, y0 + h, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
+    out += line(x0, yz, x0 + w, yz, 'var(--axis)') + line(x0, y0, x0, y0 + h, 'var(--axis)');
     for (var t = 0; t <= 4; t++) {
-      var yy = y0 + h - h * t / 4;
-      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(mx * t / 4, 2), { anchor: 'end', size: 10 });
+      var tv = mn + (mx - mn) * t / 4, yy = Y(tv);
+      out += line(x0 - 3, yy, x0, yy, 'var(--axis)') + text(x0 - 6, yy + 4, fmt(tv, 2), { anchor: 'end', size: 10 });
       if (t > 0) out += line(x0, yy, x0 + w, yy, 'var(--grid)');
     }
     for (var i = 0; i < n; i++) {
-      var v = num(vals[i]), bh = mx > 0 ? Math.max(0, h * v / mx) : 0, bx = x0 + i * bw + bw * 0.15;
-      out += rect(bx, y0 + h - bh, bw * 0.7, bh, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
-        text(bx + bw * 0.35, y0 + h - bh - 4, fmt(v, d), { anchor: 'middle', size: 11 });
-      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15, o.labels[i], { anchor: 'middle', size: 11 });
+      var v = Math.max(mn, Math.min(mx, nums[i])), top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0)), bx = x0 + i * bw + bw * 0.15;
+      out += rect(bx, top, bw * 0.7, bot - top, (o.fills && o.fills[i]) || o.fill || 'var(--chart1)') +
+        text(bx + bw * 0.35, v < 0 ? bot + 13 : top - 4, fmt(nums[i], d), { anchor: 'middle', size: 11 });
+      if (Array.isArray(o.labels) && o.labels[i] != null) out += text(bx + bw * 0.35, y0 + h + 15 + (mn < 0 ? 14 : 0), o.labels[i], { anchor: 'middle', size: 11 });
     }
     if (o.ylabel) out += text(12, y0 + h / 2, o.ylabel, { anchor: 'middle', size: 11, rotate: -90 });
     return out;
