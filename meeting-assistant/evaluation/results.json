@@ -1,0 +1,334 @@
+{
+  "dataset": "original-synthetic-atlas-v1",
+  "question_count": 10,
+  "network_used": false,
+  "summary": [
+    {
+      "strategy": "lexical",
+      "mean_recall_at_6": 0.8125,
+      "mean_reciprocal_rank": 0.875,
+      "abstention_accuracy": 0.9,
+      "scope_accuracy": 1,
+      "mean_latency_ms": 6.93
+    },
+    {
+      "strategy": "basic",
+      "mean_recall_at_6": 0.8125,
+      "mean_reciprocal_rank": 0.875,
+      "abstention_accuracy": 0.9,
+      "scope_accuracy": 1,
+      "mean_latency_ms": 7.15
+    },
+    {
+      "strategy": "contextual",
+      "mean_recall_at_6": 0.9375,
+      "mean_reciprocal_rank": 0.9375,
+      "abstention_accuracy": 1,
+      "scope_accuracy": 1,
+      "mean_latency_ms": 6.28
+    }
+  ],
+  "cases": [
+    {
+      "strategy": "lexical",
+      "question_id": "launch-change",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 7.09
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "owner",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 5,
+      "elapsed_ms": 6.67
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "storage",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 2,
+      "elapsed_ms": 12.25
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "success",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 8.13
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "remaining",
+      "recall_at_6": 0.5,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 11.34
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "budget",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 4,
+      "elapsed_ms": 6.82
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "followup",
+      "recall_at_6": 0.0,
+      "reciprocal_rank": 0,
+      "abstention_correct": false,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 3.38
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "scope",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 4,
+      "elapsed_ms": 5.36
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "absent",
+      "recall_at_6": null,
+      "reciprocal_rank": 0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 3.97
+    },
+    {
+      "strategy": "lexical",
+      "question_id": "absent-topic",
+      "recall_at_6": null,
+      "reciprocal_rank": 0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 4.25
+    },
+    {
+      "strategy": "basic",
+      "question_id": "launch-change",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 5.18
+    },
+    {
+      "strategy": "basic",
+      "question_id": "owner",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 5,
+      "elapsed_ms": 6.57
+    },
+    {
+      "strategy": "basic",
+      "question_id": "storage",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 2,
+      "elapsed_ms": 8.92
+    },
+    {
+      "strategy": "basic",
+      "question_id": "success",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 10.83
+    },
+    {
+      "strategy": "basic",
+      "question_id": "remaining",
+      "recall_at_6": 0.5,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 7.29
+    },
+    {
+      "strategy": "basic",
+      "question_id": "budget",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 4,
+      "elapsed_ms": 6.38
+    },
+    {
+      "strategy": "basic",
+      "question_id": "followup",
+      "recall_at_6": 0.0,
+      "reciprocal_rank": 0,
+      "abstention_correct": false,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 4.81
+    },
+    {
+      "strategy": "basic",
+      "question_id": "scope",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 4,
+      "elapsed_ms": 10.94
+    },
+    {
+      "strategy": "basic",
+      "question_id": "absent",
+      "recall_at_6": null,
+      "reciprocal_rank": 0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 7.09
+    },
+    {
+      "strategy": "basic",
+      "question_id": "absent-topic",
+      "recall_at_6": null,
+      "reciprocal_rank": 0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 3.48
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "launch-change",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 5.29
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "owner",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 8.43
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "storage",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 4.99
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "success",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 4.02
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "remaining",
+      "recall_at_6": 0.5,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 5.38
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "budget",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 5.01
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "followup",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 0.5,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 6,
+      "elapsed_ms": 4.18
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "scope",
+      "recall_at_6": 1.0,
+      "reciprocal_rank": 1.0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 5,
+      "elapsed_ms": 4.81
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "absent",
+      "recall_at_6": null,
+      "reciprocal_rank": 0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 5.88
+    },
+    {
+      "strategy": "contextual",
+      "question_id": "absent-topic",
+      "recall_at_6": null,
+      "reciprocal_rank": 0,
+      "abstention_correct": true,
+      "scope_correct": true,
+      "citation_count": 0,
+      "elapsed_ms": 14.83
+    }
+  ],
+  "limitations": "Small synthetic retrieval benchmark, not a measurement of human effort, transcription quality, answer factual accuracy, or performance on real meetings. Latency varies by machine. No fitted/tuned model or paid provider used."
+}

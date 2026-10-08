@@ -1,0 +1,4 @@
+# The core app and its test suite use only the Python standard library.
+# Optional extras are declared in pyproject.toml. Examples:
+# python -m pip install -e ".[capture,transcription]"
+# python -m pip install -e ".[desktop]"

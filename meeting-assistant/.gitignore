@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.data/
+.test-data/
+evaluation/results.local.json
+*.db
+*.db-shm
+*.db-wal
+*.wav
+.env

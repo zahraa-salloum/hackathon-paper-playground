@@ -1,0 +1,12 @@
+[
+  {"id":"launch-change","question":"How did the Atlas pilot launch date change, and why?","gold":[[0,1],[1,2],[2,2]],"answerable":true},
+  {"id":"owner","question":"Who owns the CSV importer?","gold":[[0,2],[1,1],[2,0]],"answerable":true},
+  {"id":"storage","question":"Why was SQLite selected for the local archive?","gold":[[0,3],[2,3]],"answerable":true},
+  {"id":"success","question":"What is the onboarding success target and did it change?","gold":[[0,4],[1,3]],"answerable":true},
+  {"id":"remaining","question":"What launch action remains after the readiness check?","gold":[[2,1],[2,4]],"answerable":true},
+  {"id":"budget","question":"Was a marketing budget approved?","gold":[[0,4],[1,4],[2,4]],"answerable":true},
+  {"id":"followup","question":"Why was it delayed?","history":[{"role":"user","content":"What was the Atlas pilot launch date?"}],"gold":[[1,2],[2,2]],"answerable":true},
+  {"id":"scope","question":"What is the Atlas pilot launch date?","scope":[0],"gold":[[0,1]],"answerable":true},
+  {"id":"absent","question":"What is the office Wi-Fi password?","gold":[],"answerable":false},
+  {"id":"absent-topic","question":"Who won the chess tournament?","gold":[],"answerable":false}
+]
